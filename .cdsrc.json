@@ -1,0 +1,38 @@
+{
+    "[development]": {
+        "requires": {
+            "db": {
+                "kind": "sqlite",
+                "credentials": {
+                    "database": ":memory:"
+                }
+            },
+            "auth": {
+                "kind": "basic",
+                "users": {
+                    "davi": {
+                        "password": "123456",
+                        "roles": ["Admin"]
+                    },
+                    "cliente": {
+                        "password": "123456",
+                        "roles": []
+                    }
+                }
+            }
+        }
+    },
+    "[production]": {
+        "requires": {
+            "db": {
+                "kind": "hana"
+            },
+            "auth": {
+                "kind": "xsuaa"
+            }
+        },
+        "hana": {
+            "deploy-format": "hdbtable"
+        }
+    }
+}

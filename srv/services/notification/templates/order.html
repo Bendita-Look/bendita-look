@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{texts.title}}</title>
+</head>
+
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #fbf4f6; color: #3b2530;">
+    <table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fbf4f6">
+        <tr>
+            <td align="center" style="padding: 24px 12px;">
+                <table width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(120, 40, 70, .08);">
+
+                    <tr>
+                        <td bgcolor="#8e3b5b" style="background-color: #8e3b5b; padding: 22px 28px; border-bottom: 3px solid #d98aa6;">
+                            <div style="font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: 1px;">{{texts.title}}</div>
+                            <div style="font-size: 14px; color: #f6dbe4; margin-top: 4px;">{{texts.orderNumber}}</div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 28px;">
+                            <p style="font-size: 18px; font-weight: 600; margin: 0 0 12px;">{{texts.greeting}}</p>
+                            <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px;">{{texts.message}}</p>
+
+                            <p style="font-size: 14px; margin: 0 0 20px;">
+                                {{texts.status}}:
+                                <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; background-color: #f6dbe4; color: #8e3b5b; font-weight: 600;">{{order.statusLabel}}</span>
+                            </p>
+
+                            <p style="font-size: 16px; font-weight: 600; margin: 0 0 8px; color: #8e3b5b;">{{texts.itemsTitle}}</p>
+                            <table width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse: collapse; font-size: 14px;">
+                                <tr style="background-color: #fbf4f6; text-align: left;">
+                                    <th>{{texts.product}}</th>
+                                    <th align="center">{{texts.quantity}}</th>
+                                    <th align="right">{{texts.price}}</th>
+                                    <th align="right">{{texts.total}}</th>
+                                </tr>
+                                {{#each items}}
+                                <tr style="border-bottom: 1px solid #f0e1e6;">
+                                    <td>{{description}}</td>
+                                    <td align="center">{{quantity}}</td>
+                                    <td align="right">{{unitPrice}}</td>
+                                    <td align="right">{{totalPrice}}</td>
+                                </tr>
+                                {{/each}}
+                                <tr>
+                                    <td colspan="3" align="right" style="font-weight: 700;">{{texts.total}}</td>
+                                    <td align="right" style="font-weight: 700; color: #8e3b5b;">{{order.total}}</td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #8e3b5b;">{{texts.contactTitle}}</p>
+                            <p style="font-size: 14px; line-height: 1.6; margin: 0;">
+                                {{order.customerName}}<br>
+                                {{order.customerPhone}}<br>
+                                {{order.customerEmail}}
+                                {{#if order.address}}<br>{{order.address}}{{/if}}
+                                {{#if order.notes}}<br><i>{{order.notes}}</i>{{/if}}
+                            </p>
+
+                            <table cellspacing="0" cellpadding="0" border="0" style="margin-top: 28px;">
+                                <tr>
+                                    {{#if trackingUrl}}
+                                    <td style="padding-right: 12px;">
+                                        <a href="{{trackingUrl}}" style="display: inline-block; padding: 12px 22px; background-color: #8e3b5b; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: 600;">{{texts.trackOrder}}</a>
+                                    </td>
+                                    {{/if}}
+                                    {{#if whatsappUrl}}
+                                    <td>
+                                        <a href="{{whatsappUrl}}" style="display: inline-block; padding: 12px 22px; background-color: #25d366; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: 600;">{{texts.whatsapp}}</a>
+                                    </td>
+                                    {{/if}}
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 16px 28px; background-color: #fbf4f6; font-size: 12px; color: #8a6b77;">{{texts.footer}}</td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

@@ -1,0 +1,69 @@
+_schema-version: 3.3.0
+ID: BenditaLook
+version: 1.0.0
+description: "Bendita Look"
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+        - npx tsc server.ts --module node16 --moduleResolution node16 --esModuleInterop --skipLibCheck --target es2022 --outDir gen/srv
+modules:
+
+  - name: BenditaLook-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      instances: 1
+      memory: 256M
+      disk-quota: 512M
+      buildpack: nodejs_buildpack
+      readiness-health-check-type: http
+      readiness-health-check-http-endpoint: /health
+    properties:
+      STORE_NAME: Bendita Look
+      STORE_URL: https://davicastr.github.io/SAP-UI5-BenditaLook/index.html
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: BenditaLook-db
+      - name: BenditaLook-uaa
+
+  - name: BenditaLook-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 256M
+    requires:
+      - name: BenditaLook-db
+
+resources:
+
+  - name: BenditaLook-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+
+  - name: BenditaLook-uaa
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: BenditaLook-uaa-${space}
+        tenant-mode: dedicated
+        oauth2-configuration:
+          redirect-uris:
+            - https://*.hana.ondemand.com/**
+            - http://localhost:*/**
+            - https://davicastr.github.io/**

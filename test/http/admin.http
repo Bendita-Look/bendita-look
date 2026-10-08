@@ -1,0 +1,82 @@
+@server=http://localhost:4004
+@admin={{server}}/service/BenditaLook
+@username=davi
+@password=123456
+
+
+### Pedidos
+# @name Orders_GET
+GET {{admin}}/Orders?$expand=Items&$orderby=Number desc
+Authorization: Basic {{username}}:{{password}}
+
+
+### Alterar status do pedido (NEW, IN_SERVICE, COMPLETED, CANCELLED)
+# @name ChangeOrderStatus
+POST {{admin}}/ChangeOrderStatus
+Content-Type: application/json
+Accept-Language: pt-BR
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "OrderId": "{{Orders_GET.response.body.$.value[0].ID}}",
+  "Status": "IN_SERVICE"
+}
+
+
+### Produto - criar draft
+# @name Products_Draft_POST
+POST {{admin}}/Products
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "Name": "Vestido Longo Liso",
+  "Price": 219.90,
+  "Category_ID": "c1a00000-0000-4000-8000-000000000001",
+  "Colors": [{ "ID": "c0c00000-0000-4000-8000-0000000000a1", "Name": "Vermelho", "HexCode": "#B22234" }],
+  "Variants": [{ "Color_ID": "c0c00000-0000-4000-8000-0000000000a1", "Size": "M", "Stock": 3 }]
+}
+
+
+### Resultado do POST acima
+@productDraftID={{Products_Draft_POST.response.body.$.ID}}
+
+
+### Produto - ativar draft
+# @name Products_Draft_Activate
+POST {{admin}}/Products(ID={{productDraftID}},IsActiveEntity=false)/BenditaLook.draftActivate
+Content-Type: application/json
+Accept-Language: pt-BR
+Authorization: Basic {{username}}:{{password}}
+
+{}
+
+
+### Produto - editar (cria draft a partir do ativo)
+# @name Products_Draft_Edit
+POST {{admin}}/Products(ID={{productDraftID}},IsActiveEntity=true)/BenditaLook.draftEdit
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{ "PreserveChanges": true }
+
+
+### Categoria - excluir (falha se houver produtos)
+# @name Categories_DELETE
+DELETE {{admin}}/Categories(ID=c1a00000-0000-4000-8000-000000000001,IsActiveEntity=true)
+Accept-Language: pt-BR
+Authorization: Basic {{username}}:{{password}}
+
+
+### Exportar backup
+# @name ExportBackup
+POST {{admin}}/ExportBackup
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{}
+
+
+### Baixar backup gerado
+GET {{admin}}/Backups(ID={{ExportBackup.response.body.$.data}},IsActiveEntity=true)/Backup
+Authorization: Basic {{username}}:{{password}}

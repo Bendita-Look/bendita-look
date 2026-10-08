@@ -1,0 +1,44 @@
+@server=http://localhost:4004
+@catalog={{server}}/service/Catalog
+
+
+### Produtos publicos (sem login)
+# @name Products_GET
+GET {{catalog}}/Products?$expand=Category($select=Name),Colors,Variants,Images($select=ID,Color_ID,SortOrder)
+
+
+### Categorias publicas
+# @name Categories_GET
+GET {{catalog}}/Categories
+
+
+### Enviar pedido
+# @name SubmitOrder
+POST {{catalog}}/SubmitOrder
+Content-Type: application/json
+Accept-Language: pt-BR
+
+{
+  "Order": {
+    "CustomerName": "Maria Silva",
+    "CustomerEmail": "maria@email.com",
+    "CustomerPhone": "(11) 98888-7777",
+    "City": "São Paulo",
+    "Notes": "Prefiro contato à tarde",
+    "Items": [
+      { "Variant_ID": "fa000000-0000-4000-8000-000000000001", "Quantity": 1 },
+      { "Variant_ID": "fa000000-0000-4000-8000-000000000004", "Quantity": 2 }
+    ]
+  }
+}
+
+
+### Resultado do pedido acima
+@orderNumber={{SubmitOrder.response.body.$.Number}}
+@accessCode={{SubmitOrder.response.body.$.AccessCode}}
+
+
+### Acompanhar pedido
+# @name TrackOrder
+GET {{catalog}}/TrackOrder(Number={{orderNumber}},AccessCode='{{accessCode}}')
+Accept-Language: pt-BR

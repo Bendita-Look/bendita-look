@@ -1,0 +1,4 @@
+ID;Name;Description;Price;Active;Featured;Category_ID
+b0d00000-0000-4000-8000-000000000001;Vestido Midi Floral;Vestido midi em viscose com estampa floral e alças finas.;189.90;true;true;c1a00000-0000-4000-8000-000000000001
+b0d00000-0000-4000-8000-000000000002;Blusa Cropped Canelada;Blusa cropped em malha canelada, ideal para o dia a dia.;79.90;true;false;c1a00000-0000-4000-8000-000000000002
+b0d00000-0000-4000-8000-000000000003;Saia Plissada Midi;Saia plissada com cós elástico.;129.90;true;true;c1a00000-0000-4000-8000-000000000003

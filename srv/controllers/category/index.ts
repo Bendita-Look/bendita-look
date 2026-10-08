@@ -1,0 +1,1 @@
+export type { CategoryController } from './protocols';

@@ -1,0 +1,1 @@
+export type { BaseController, BaseControllerResponse } from './protocols';
