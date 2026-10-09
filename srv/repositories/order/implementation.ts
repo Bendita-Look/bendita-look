@@ -21,6 +21,30 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
     }
 
 
+    public async findWithItemsByPeriod(Start: Date, End: Date): Promise<OrderModel[]> {
+
+        const aOrders = await cds.run(
+            SELECT.from(this.getEntity()).where({
+                createdAt: { '>=': Start.toISOString(), '<': End.toISOString() }
+            })
+        );
+
+        if (!aOrders.length) {
+            return [];
+        }
+
+        const aItems = await cds.run(
+            SELECT.from(ServiceLocator.getEntity('OrderItems')).where({ Order_ID: { in: aOrders.map((oOrder: { ID: string }) => oOrder.ID) } })
+        );
+
+        return this.mapResult(aOrders.map((oOrder: { ID: string }) => ({
+            ...oOrder,
+            Items: aItems.filter((oItem: { Order_ID: string }) => oItem.Order_ID === oOrder.ID)
+        })));
+
+    }
+
+
     public async findNextNumber(): Promise<number> {
 
         const oResult = await cds.run(

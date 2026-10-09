@@ -36,6 +36,40 @@ modules:
       - name: BenditaLook-db
       - name: BenditaLook-uaa
 
+  - name: BenditaLook-destinations
+    type: com.sap.application.content
+    requires:
+      - name: BenditaLook-uaa
+        parameters:
+          service-key:
+            name: BenditaLook-uaa-key
+      - name: BenditaLook-destination
+        parameters:
+          content-target: true
+      - name: srv-api
+    build-parameters:
+      no-source: true
+    parameters:
+      content:
+        instance:
+          existing_destinations_policy: update
+          destinations:
+            - Name: BenditaLook-auth
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: BenditaLook-uaa
+              ServiceKeyName: BenditaLook-uaa-key
+              sap.cloud.service: BenditaLook
+        subaccount:
+          existing_destinations_policy: update
+          destinations:
+            - Name: BenditaLook-srv-api
+              Authentication: OAuth2UserTokenExchange
+              TokenServiceInstanceName: BenditaLook-uaa
+              TokenServiceKeyName: BenditaLook-uaa-key
+              URL: ~{srv-api/srv-url}
+              HTML5.DynamicDestination: true
+              sap.cloud.service: BenditaLook
+
   - name: BenditaLook-db-deployer
     type: hdb
     path: gen/db
@@ -67,3 +101,27 @@ resources:
             - https://*.hana.ondemand.com/**
             - http://localhost:*/**
             - https://davicastr.github.io/**
+          credential-types:
+            - binding-secret
+            - x509
+
+  - name: BenditaLook-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      config:
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - Name: BenditaLook-srv-api
+                URL: ~{srv-api/srv-url}
+                Authentication: NoAuthentication
+                Type: HTTP
+                ProxyType: Internet
+                HTML5.ForwardAuthToken: true
+                HTML5.DynamicDestination: true
+    requires:
+      - name: srv-api

@@ -45,3 +45,29 @@ type TrackedOrder {
     modifiedAt   : Timestamp;
     Items        : many TrackedOrderItem;
 }
+
+type MonthlySales {
+    Month   : Integer;
+    Orders  : Integer;
+    Items   : Integer;
+    Revenue : Decimal(15, 2);
+}
+
+type ProductSales {
+    ProductName : String(120);
+    Quantity    : Integer;
+    Revenue     : Decimal(15, 2);
+}
+
+type SalesReport {
+    Year            : Integer;
+    CompletedOrders : Integer;
+    ItemsSold       : Integer;
+    Revenue         : Decimal(15, 2);
+    AverageTicket   : Decimal(15, 2);
+    OpenOrders      : Integer;
+    OpenAmount      : Decimal(15, 2);
+    CancelledOrders : Integer;
+    Months          : many MonthlySales;
+    TopProducts     : many ProductSales;
+}
