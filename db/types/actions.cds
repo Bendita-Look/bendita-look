@@ -22,6 +22,20 @@ type OrderInput {
     Items         : many OrderItemInput;
 }
 
+type DeliveryInput {
+    DeliveryType  : String(20);
+    CourierName   : String(120);
+    VehiclePlate  : String(10);
+    DeliveryNotes : String(255);
+}
+
+type StoreInfo {
+    StoreName    : String(80);
+    Whatsapp     : String(20);
+    ContactEmail : String(120);
+    Instagram    : String(60);
+}
+
 type SubmitOrderResult {
     Number     : Integer;
     AccessCode : String(32);
@@ -41,6 +55,10 @@ type TrackedOrder {
     Status       : String(20);
     CustomerName : String(120);
     TotalAmount  : Decimal(15, 2);
+    DeliveryType : String(20);
+    CourierName  : String(120);
+    VehiclePlate : String(10);
+    DeliveryNotes: String(255);
     createdAt    : Timestamp;
     modifiedAt   : Timestamp;
     Items        : many TrackedOrderItem;

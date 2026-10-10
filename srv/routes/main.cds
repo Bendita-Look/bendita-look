@@ -27,7 +27,14 @@ service BenditaLook {
     @odata.draft.enabled
     entity Backups         as projection on entities.Backups;
 
-    action ChangeOrderStatus(OrderId: UUID, Status: entities.OrderStatus) returns entities.ActionResult;
+    @odata.draft.enabled
+    @Capabilities.InsertRestrictions.Insertable: false
+    @Capabilities.DeleteRestrictions.Deletable : false
+    entity StoreSettings   as projection on entities.StoreSettings;
+
+    action ChangeOrderStatus(OrderId: UUID,
+                             Status: entities.OrderStatus,
+                             Delivery: entities.DeliveryInput)            returns entities.ActionResult;
 
     action ExportBackup()                                                 returns entities.ActionResult;
 

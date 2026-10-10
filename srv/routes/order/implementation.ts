@@ -22,9 +22,9 @@ export class OrderRouteImplementation extends BaseRouteImplementation<Order> imp
 
     private async changeOrderStatus(Request: Request): Promise<unknown> {
 
-        const { OrderId, Status } = Request.data;
+        const { OrderId, Status, Delivery } = Request.data;
 
-        const oResult = await this.Controller.changeStatus(OrderId, Status);
+        const oResult = await this.Controller.changeStatus(OrderId, Status, Delivery);
 
         this.rejectOnError(Request, oResult);
 

@@ -19,6 +19,7 @@ type BackupRow = Record<string, unknown> & { ID?: string; ImageType?: string };
 export type BackupTable = {
     name: string;
     repository: BaseRepository<ExportableModel>;
+    overwriteExisting?: boolean;
 };
 
 const WORKBOOK_NAME = 'BenditaLook.xlsx';
@@ -129,7 +130,7 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
         }
 
         const aRows = this.extractRows(oSheet);
-        const aExisting = await Table.repository.findByIds(aRows.map((oRow) => oRow.ID as string));
+        const aExisting = Table.overwriteExisting ? [] : await Table.repository.findByIds(aRows.map((oRow) => oRow.ID as string));
         const oExistingIds = new Set(aExisting.map((oModel) => (oModel.toEntityObject() as BackupRow).ID));
 
         const aNewRows = aRows

@@ -8,6 +8,7 @@ import { oProductImageRepositoryFactory } from '../repositories/product-image';
 import { oProductVariantRepositoryFactory } from '../repositories/product-variant';
 import { oOrderRepositoryFactory } from '../repositories/order';
 import { oOrderItemRepositoryFactory } from '../repositories/order-item';
+import { oStoreSettingsRepositoryFactory } from '../repositories/store-settings';
 
 const makeBackupService = (): BackupService => {
 
@@ -21,7 +22,8 @@ const makeBackupService = (): BackupService => {
             { name: 'ProductVariants', repository: oProductVariantRepositoryFactory },
             { name: 'ProductImages', repository: oProductImageRepositoryFactory },
             { name: 'Orders', repository: oOrderRepositoryFactory },
-            { name: 'OrderItems', repository: oOrderItemRepositoryFactory }
+            { name: 'OrderItems', repository: oOrderItemRepositoryFactory },
+            { name: 'StoreSettings', repository: oStoreSettingsRepositoryFactory, overwriteExisting: true }
         ]
     );
 

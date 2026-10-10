@@ -1,5 +1,5 @@
 import cds from '@sap/cds';
-import { OrderModel } from '@/models/order';
+import { OrderDelivery, OrderModel } from '@/models/order';
 import { OrderStatus } from '@/constants/order-status';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
 import { OrderRepository } from './protocols';
@@ -68,10 +68,10 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
     }
 
 
-    public async updateStatus(Id: string, Status: OrderStatus): Promise<void> {
+    public async updateStatus(Id: string, Status: OrderStatus, Delivery?: OrderDelivery): Promise<void> {
 
         await cds.run(
-            UPDATE(this.getEntity()).set({ Status }).where({ ID: Id })
+            UPDATE(this.getEntity()).set({ ...Delivery, Status }).where({ ID: Id })
         );
 
     }

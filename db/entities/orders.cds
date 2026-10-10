@@ -5,7 +5,10 @@ using {
     managed
 } from '@sap/cds/common';
 using {apps.dflc.benditalook.entities as entities} from './catalog';
-using {apps.dflc.benditalook.entities.OrderStatus} from '../types/order-status';
+using {
+    apps.dflc.benditalook.entities.OrderStatus,
+    apps.dflc.benditalook.entities.DeliveryType
+} from '../types/order-status';
 
 @assert.unique: {Number: [Number]}
 entity Orders : cuid, managed {
@@ -21,6 +24,10 @@ entity Orders : cuid, managed {
     ZipCode       : String(10);
     Notes         : String(500);
     TotalAmount   : Decimal(15, 2);
+    DeliveryType  : DeliveryType;
+    CourierName   : String(120);
+    VehiclePlate  : String(10);
+    DeliveryNotes : String(255);
     Items         : Composition of many OrderItems
                         on Items.Order = $self;
 }

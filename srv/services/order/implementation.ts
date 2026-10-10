@@ -1,10 +1,10 @@
 import crypto from 'crypto';
 import Decimal from 'decimal.js';
-import { Order, OrderInput, SubmitOrderResult, TrackedOrder } from '@models/apps/dflc/benditalook/entities';
+import { DeliveryInput, Order, OrderInput, SubmitOrderResult, TrackedOrder } from '@models/apps/dflc/benditalook/entities';
 import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ConflictError, NotFoundError, TooManyRequestsError, ValidationError } from '@/errors';
-import { ORDER_STATUS_TRANSITIONS, OrderStatus } from '@/constants/order-status';
-import { OrderModel } from '@/models/order';
+import { DeliveryType, ORDER_STATUS_TRANSITIONS, OrderStatus } from '@/constants/order-status';
+import { OrderDelivery, OrderModel } from '@/models/order';
 import { OrderItemModel } from '@/models/order-item';
 import { OrderableVariantModel } from '@/models/orderable-variant';
 import { OrderRepository } from '@/repositories/order';
@@ -70,10 +70,16 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
     }
 
 
-    public async changeStatus(OrderId: string, Status: string): Promise<Either<AbstractError, boolean>> {
+    public async changeStatus(OrderId: string, Status: string, Delivery?: DeliveryInput | null): Promise<Either<AbstractError, boolean>> {
 
         if (!Object.values(OrderStatus).includes(Status as OrderStatus)) {
             return left(new ValidationError('error.invalidOrderStatus'));
+        }
+
+        const oDelivery = Status === OrderStatus.OutForDelivery ? this.validateDelivery(Delivery) : right(undefined);
+
+        if (oDelivery.isLeft()) {
+            return left(oDelivery.value);
         }
 
         return this.execute(async () => {
@@ -97,15 +103,41 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 await this.restoreStock(oOrder);
             }
 
-            await this.Repository.updateStatus(oOrder.Id, eNewStatus);
+            await this.Repository.updateStatus(oOrder.Id, eNewStatus, oDelivery.value);
 
             const sLocale = ServiceLocator.getLocale();
-            const oUpdatedOrder = oOrder.withStatus(eNewStatus);
+            const oUpdatedOrder = oOrder.withStatus(eNewStatus, oDelivery.value);
 
             ServiceLocator.afterCommit(() => this.NotificationService.sendOrderStatusChanged(oUpdatedOrder, sLocale));
 
             return right(true);
 
+        });
+
+    }
+
+
+    private validateDelivery(Delivery?: DeliveryInput | null): Either<AbstractError, OrderDelivery> {
+
+        const eDeliveryType = Delivery?.DeliveryType as DeliveryType;
+
+        if (!Object.values(DeliveryType).includes(eDeliveryType)) {
+            return left(new ValidationError('error.deliveryTypeRequired'));
+        }
+
+        if (this.isBlank(Delivery?.CourierName)) {
+            return left(new ValidationError('error.courierNameRequired'));
+        }
+
+        if (eDeliveryType === DeliveryType.UberFlash && this.isBlank(Delivery?.VehiclePlate)) {
+            return left(new ValidationError('error.vehiclePlateRequired'));
+        }
+
+        return right({
+            DeliveryType: eDeliveryType,
+            CourierName: (Delivery?.CourierName as string).trim(),
+            VehiclePlate: Delivery?.VehiclePlate?.trim().toUpperCase() || undefined,
+            DeliveryNotes: Delivery?.DeliveryNotes?.trim() || undefined
         });
 
     }
@@ -242,6 +274,10 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             Status: Order.Status,
             CustomerName: Order.CustomerName,
             TotalAmount: Order.TotalAmount.toNumber(),
+            DeliveryType: Order.DeliveryType,
+            CourierName: Order.CourierName,
+            VehiclePlate: Order.VehiclePlate,
+            DeliveryNotes: Order.DeliveryNotes,
             createdAt: Order.CreatedAt,
             modifiedAt: Order.ModifiedAt,
             Items: Order.Items.map((oItem) => ({

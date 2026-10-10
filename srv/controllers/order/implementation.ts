@@ -1,4 +1,4 @@
-import { Order, OrderInput } from '@models/apps/dflc/benditalook/entities';
+import { DeliveryInput, Order, OrderInput } from '@models/apps/dflc/benditalook/entities';
 import { OrderService } from '@/services/order';
 import { BaseControllerResponse } from '@/controllers/base';
 import { OrderController } from './protocols';
@@ -27,9 +27,9 @@ export class OrderControllerImplementation extends BaseControllerImplementation<
     }
 
 
-    public async changeStatus(OrderId: string, Status: string): Promise<BaseControllerResponse> {
+    public async changeStatus(OrderId: string, Status: string, Delivery?: DeliveryInput | null): Promise<BaseControllerResponse> {
 
-        return this.respond(await this.Service.changeStatus(OrderId, Status), 200);
+        return this.respond(await this.Service.changeStatus(OrderId, Status, Delivery), 200);
 
     }
 

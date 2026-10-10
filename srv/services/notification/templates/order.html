@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="{{language}}">
 
 <head>
     <meta charset="UTF-8">
@@ -52,6 +52,16 @@
                                     <td align="right" style="font-weight: 700; color: #8e3b5b;">{{order.total}}</td>
                                 </tr>
                             </table>
+
+                            {{#if delivery}}
+                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #8e3b5b;">{{texts.deliveryTitle}}</p>
+                            <table cellspacing="0" cellpadding="4" border="0" style="font-size: 14px; background-color: #fbf4f6; border-radius: 10px; width: 100%;">
+                                <tr><td width="40%"><b>{{texts.deliveryType}}</b></td><td>{{delivery.type}}</td></tr>
+                                <tr><td><b>{{texts.courierName}}</b></td><td>{{delivery.courierName}}</td></tr>
+                                {{#if delivery.vehiclePlate}}<tr><td><b>{{texts.vehiclePlate}}</b></td><td>{{delivery.vehiclePlate}}</td></tr>{{/if}}
+                                {{#if delivery.notes}}<tr><td><b>{{texts.deliveryNotes}}</b></td><td>{{delivery.notes}}</td></tr>{{/if}}
+                            </table>
+                            {{/if}}
 
                             <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #8e3b5b;">{{texts.contactTitle}}</p>
                             <p style="font-size: 14px; line-height: 1.6; margin: 0;">

@@ -47,4 +47,6 @@ service Catalog {
 
     function TrackOrder(Number: Integer, AccessCode: String(32)) returns entities.TrackedOrder;
 
+    function StoreInfo()                                          returns entities.StoreInfo;
+
 }

@@ -1,10 +1,17 @@
 import { Order, Orders } from '@models/apps/dflc/benditalook/entities';
 import Decimal from 'decimal.js';
-import { OrderStatus } from '@/constants/order-status';
+import { DeliveryType, OrderStatus } from '@/constants/order-status';
 import { AuditProperties, BaseModel } from './base';
 import { OrderItemModel } from './order-item';
 
-export type OrderProperties = AuditProperties & {
+export type OrderDelivery = {
+    DeliveryType: DeliveryType;
+    CourierName: string;
+    VehiclePlate?: string;
+    DeliveryNotes?: string;
+};
+
+export type OrderProperties = AuditProperties & Partial<OrderDelivery> & {
     Id: string;
     Number: number;
     AccessCode: string;
@@ -45,6 +52,10 @@ export class OrderModel extends BaseModel {
             ZipCode: Order.ZipCode ?? undefined,
             Notes: Order.Notes ?? undefined,
             TotalAmount: this.retrieveDecimal(Order.TotalAmount),
+            DeliveryType: (Order.DeliveryType as DeliveryType) ?? undefined,
+            CourierName: Order.CourierName ?? undefined,
+            VehiclePlate: Order.VehiclePlate ?? undefined,
+            DeliveryNotes: Order.DeliveryNotes ?? undefined,
             Items: OrderItemModel.mapModel(Order.Items ?? []),
             ...this.retrieveAudit(Order)
         }));
@@ -79,13 +90,21 @@ export class OrderModel extends BaseModel {
 
     public get Items() { return this.properties.Items; }
 
+    public get DeliveryType() { return this.properties.DeliveryType; }
+
+    public get CourierName() { return this.properties.CourierName; }
+
+    public get VehiclePlate() { return this.properties.VehiclePlate; }
+
+    public get DeliveryNotes() { return this.properties.DeliveryNotes; }
+
     public get CreatedAt() { return this.properties.CreatedAt; }
 
     public get ModifiedAt() { return this.properties.ModifiedAt; }
 
-    public withStatus(Status: OrderStatus): OrderModel {
+    public withStatus(Status: OrderStatus, Delivery?: OrderDelivery): OrderModel {
 
-        return OrderModel.with({ ...this.properties, Status });
+        return OrderModel.with({ ...this.properties, ...Delivery, Status });
 
     }
 
@@ -105,6 +124,10 @@ export class OrderModel extends BaseModel {
             ZipCode: this.properties.ZipCode,
             Notes: this.properties.Notes,
             TotalAmount: this.properties.TotalAmount.toNumber(),
+            DeliveryType: this.properties.DeliveryType,
+            CourierName: this.properties.CourierName,
+            VehiclePlate: this.properties.VehiclePlate,
+            DeliveryNotes: this.properties.DeliveryNotes,
             ...this.auditEntityObject(this.properties)
         });
 

@@ -6,21 +6,29 @@ Backend da loja Bendita Look (SAP CAP + TypeScript). O catálogo é público; a 
 
 | Serviço | Caminho | Acesso | Conteúdo |
 |---|---|---|---|
-| `Catalog` | `/service/Catalog` | Público | Categorias, produtos, cores, fotos, estoque, `SubmitOrder`, `TrackOrder` |
-| `BenditaLook` | `/service/BenditaLook` | Role `Admin` | CRUD com draft de categorias, produtos e backups, pedidos, `ChangeOrderStatus`, `ExportBackup` |
+| `Catalog` | `/service/Catalog` | Público | Categorias, produtos, cores, fotos, estoque, `SubmitOrder`, `TrackOrder`, `StoreInfo` |
+| `BenditaLook` | `/service/BenditaLook` | Role `Admin` | CRUD com draft de categorias, produtos, configurações da loja e backups, pedidos, `ChangeOrderStatus`, `SalesReport`, `ExportBackup` |
 
 ## Fluxo do pedido
 
 1. A cliente envia o carrinho com os dados de contato (`SubmitOrder`), sem cadastro.
 2. O estoque é reservado na mesma transação; se algum item não tiver estoque, nada é gravado.
-3. É enviado um email para a cliente com cópia para `ADMIN_EMAILS`, com o link de acompanhamento (`STORE_URL#/order/<número>/<código>`).
-4. O admin altera o status: `NEW → IN_SERVICE → COMPLETED`, ou `CANCELLED` a partir de `NEW`/`IN_SERVICE`, o que devolve o estoque. Cada mudança envia email para a cliente.
+3. É enviado um email para a cliente com cópia para os emails de notificação das configurações, com o link de acompanhamento (`STORE_URL#/order/<número>/<código>`).
+4. O admin altera o status: `NEW → IN_SERVICE → OUT_FOR_DELIVERY → COMPLETED` (a entrega é opcional; retirada vai direto de `IN_SERVICE` para `COMPLETED`). `OUT_FOR_DELIVERY` exige tipo de entrega (Uber Flash ou entregador local), nome do entregador e, no Uber Flash, a placa. `CANCELLED` pode ser aplicado a qualquer pedido em aberto e devolve o estoque. Cada mudança envia email para a cliente.
+
+## Configurações da loja
+
+Nome, WhatsApp, email de contato, Instagram e emails de notificação ficam na entidade `StoreSettings` (registro único, editado em draft pelo admin). Ela é criada automaticamente no primeiro acesso com os valores das variáveis `STORE_*` e `ADMIN_EMAILS`; depois disso vale o que estiver salvo no admin.
 
 Envios de pedido são limitados a 10 por IP a cada 15 minutos (`srv/constants/order-limits.ts`).
 
 ### Estoque durante a edição do produto
 
 Ao editar um produto (draft), o estoque de cada variação é guardado em `StockOnEdit`. Na ativação, o sistema aplica apenas a diferença que o admin digitou sobre o estoque atual, preservando as reservas feitas por pedidos durante a edição.
+
+## Idiomas
+
+Mensagens de erro e emails em português (padrão) e inglês (`srv/_i18n`), escolhidos pelo `Accept-Language` da requisição.
 
 ## Backup
 
@@ -57,10 +65,8 @@ Sem SMTP configurado, os emails são ignorados com um aviso no log e o pedido se
 | Variável | Descrição |
 |---|---|
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Servidor de email (Gmail: senha de app) |
-| `ADMIN_EMAILS` | Emails que recebem cópia dos novos pedidos (separados por vírgula) |
 | `STORE_URL` | URL do app UI5, usada no link de acompanhamento |
-| `STORE_WHATSAPP` | WhatsApp da loja com DDI e DDD (ex.: `5511999999999`) |
-| `STORE_NAME` | Nome do remetente dos emails |
+| `STORE_NAME`, `STORE_WHATSAPP`, `STORE_EMAIL`, `STORE_INSTAGRAM`, `ADMIN_EMAILS` | Valores iniciais das configurações da loja (usados só na criação; depois edite pelo admin) |
 | `CORS_ORIGINS` | Origens extras permitidas além de `https://davicastr.github.io` |
 
 ## Deploy no BTP Trial
@@ -71,8 +77,6 @@ cf deploy mta_archives/BenditaLook_1.0.0.mtar
 cf set-env BenditaLook-srv SMTP_HOST smtp.gmail.com
 cf set-env BenditaLook-srv SMTP_USER <email>
 cf set-env BenditaLook-srv SMTP_PASSWORD <senha-de-app>
-cf set-env BenditaLook-srv ADMIN_EMAILS <emails>
-cf set-env BenditaLook-srv STORE_WHATSAPP <numero>
 cf restage BenditaLook-srv
 ```
 

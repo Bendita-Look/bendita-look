@@ -2,6 +2,7 @@ import cds from '@sap/cds';
 import nodemailer, { Transporter } from 'nodemailer';
 
 export type EmailMessage = {
+    fromName: string;
     to: string;
     cc?: string[];
     subject: string;
@@ -31,7 +32,7 @@ export class EmailSender {
         }
 
         await this.getTransporter().sendMail({
-            from: `"${process.env.STORE_NAME || 'Bendita Look'}" <${process.env.SMTP_USER}>`,
+            from: `"${Message.fromName}" <${process.env.SMTP_USER}>`,
             to: Message.to,
             cc: Message.cc?.length ? Message.cc : undefined,
             subject: Message.subject,

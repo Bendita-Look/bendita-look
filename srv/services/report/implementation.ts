@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import { MonthlySales, ProductSales, SalesReport } from '@models/apps/dflc/benditalook/entities';
 import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ValidationError } from '@/errors';
-import { OrderStatus } from '@/constants/order-status';
+import { OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
 import { OrderModel } from '@/models/order';
 import { OrderRepository } from '@/repositories/order';
 import { ReportService } from './protocols';
@@ -11,7 +11,6 @@ import { BaseServiceImplementation } from '../base/implementation';
 const MONTHS_IN_YEAR = 12;
 const TOP_PRODUCTS_LIMIT = 10;
 const YEAR_RANGE = { min: 2000, max: 2100 };
-const OPEN_STATUSES = [OrderStatus.New, OrderStatus.InService];
 
 type ProductTotals = { quantity: number; revenue: Decimal };
 
@@ -47,7 +46,7 @@ export class ReportServiceImplementation extends BaseServiceImplementation<Sales
     private buildReport(Year: number, Orders: OrderModel[]): SalesReport {
 
         const aCompleted = Orders.filter((oOrder) => oOrder.Status === OrderStatus.Completed);
-        const aOpen = Orders.filter((oOrder) => OPEN_STATUSES.includes(oOrder.Status));
+        const aOpen = Orders.filter((oOrder) => OPEN_ORDER_STATUSES.includes(oOrder.Status));
         const oRevenue = this.sumAmounts(aCompleted);
         const iItemsSold = aCompleted.reduce((iTotal, oOrder) => iTotal + this.countItems(oOrder), 0);
 
