@@ -24,9 +24,8 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
     public async findWithItemsByPeriod(Start: Date, End: Date): Promise<OrderModel[]> {
 
         const aOrders = await cds.run(
-            SELECT.from(this.getEntity()).where({
-                createdAt: { '>=': Start.toISOString(), '<': End.toISOString() }
-            })
+            SELECT.from(this.getEntity())
+                .where`createdAt >= ${Start.toISOString()} and createdAt < ${End.toISOString()}`
         );
 
         if (!aOrders.length) {
