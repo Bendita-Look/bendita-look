@@ -49,4 +49,9 @@ service Catalog {
 
     function StoreInfo()                                          returns entities.StoreInfo;
 
+    function ActivePromotions()                                   returns many entities.ActivePromotion;
+
+    action   QuoteOrder(Items: many entities.OrderItemInput,
+                        CouponCode: String(20))                   returns entities.OrderQuote;
+
 }

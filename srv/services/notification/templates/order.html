@@ -7,17 +7,17 @@
     <title>{{texts.title}}</title>
 </head>
 
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #fbf4f6; color: #3b2530;">
-    <table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fbf4f6">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #fdf1f4; color: #4a3527;">
+    <table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fdf1f4">
         <tr>
             <td align="center" style="padding: 24px 12px;">
                 <table width="600" cellspacing="0" cellpadding="0" border="0"
-                    style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(120, 40, 70, .08);">
+                    style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(156, 122, 74, .12);">
 
                     <tr>
-                        <td bgcolor="#8e3b5b" style="background-color: #8e3b5b; padding: 22px 28px; border-bottom: 3px solid #d98aa6;">
-                            <div style="font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: 1px;">{{texts.title}}</div>
-                            <div style="font-size: 14px; color: #f6dbe4; margin-top: 4px;">{{texts.orderNumber}}</div>
+                        <td align="center" bgcolor="#ffcad4" style="background-color: #ffcad4; padding: 20px 28px; border-bottom: 3px solid #a8814f;">
+                            <img src="cid:logo" alt="{{texts.title}}" width="110" height="110" style="display: block; border-radius: 55px;">
+                            <div style="font-size: 14px; color: #7a5a35; margin-top: 10px; font-weight: 600;">{{texts.orderNumber}}</div>
                         </td>
                     </tr>
 
@@ -26,36 +26,62 @@
                             <p style="font-size: 18px; font-weight: 600; margin: 0 0 12px;">{{texts.greeting}}</p>
                             <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px;">{{texts.message}}</p>
 
+                            {{#if order.statusLabel}}
                             <p style="font-size: 14px; margin: 0 0 20px;">
                                 {{texts.status}}:
-                                <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; background-color: #f6dbe4; color: #8e3b5b; font-weight: 600;">{{order.statusLabel}}</span>
+                                <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; background-color: #ffe3e9; color: #7a5a35; font-weight: 600;">{{order.statusLabel}}</span>
                             </p>
+                            {{/if}}
 
-                            <p style="font-size: 16px; font-weight: 600; margin: 0 0 8px; color: #8e3b5b;">{{texts.itemsTitle}}</p>
+                            <p style="font-size: 16px; font-weight: 600; margin: 0 0 8px; color: #7a5a35;">{{texts.itemsTitle}}</p>
                             <table width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse: collapse; font-size: 14px;">
-                                <tr style="background-color: #fbf4f6; text-align: left;">
+                                <tr style="background-color: #fdf1f4; text-align: left;">
                                     <th>{{texts.product}}</th>
                                     <th align="center">{{texts.quantity}}</th>
                                     <th align="right">{{texts.price}}</th>
                                     <th align="right">{{texts.total}}</th>
                                 </tr>
                                 {{#each items}}
-                                <tr style="border-bottom: 1px solid #f0e1e6;">
+                                <tr style="border-bottom: 1px solid #f6e2e7;">
                                     <td>{{description}}</td>
                                     <td align="center">{{quantity}}</td>
                                     <td align="right">{{unitPrice}}</td>
                                     <td align="right">{{totalPrice}}</td>
                                 </tr>
                                 {{/each}}
+                                {{#if order.hasDiscount}}
+                                <tr>
+                                    <td colspan="3" align="right">{{texts.subtotal}}</td>
+                                    <td align="right">{{order.subtotal}}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" align="right">{{texts.discount}}</td>
+                                    <td align="right" style="color: #2e7d32;">- {{order.discount}}</td>
+                                </tr>
+                                {{/if}}
                                 <tr>
                                     <td colspan="3" align="right" style="font-weight: 700;">{{texts.total}}</td>
-                                    <td align="right" style="font-weight: 700; color: #8e3b5b;">{{order.total}}</td>
+                                    <td align="right" style="font-weight: 700; color: #7a5a35;">{{order.total}}</td>
                                 </tr>
                             </table>
 
+                            {{#if promotions.length}}
+                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #7a5a35;">{{texts.promotionsTitle}}</p>
+                            <ul style="font-size: 14px; line-height: 1.6; margin: 0; padding-left: 20px;">
+                                {{#each promotions}}
+                                <li><b>{{name}}</b>{{#if gift}}: {{gift}}{{/if}}{{#if discount}}: - {{discount}}{{/if}}</li>
+                                {{/each}}
+                            </ul>
+                            {{/if}}
+
+                            {{#if pickup}}
+                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #7a5a35;">{{texts.pickupTitle}}</p>
+                            <p style="font-size: 14px; line-height: 1.6; margin: 0;">{{texts.pickupMessage}}{{#if pickup.address}}<br><b>{{pickup.address}}</b>{{/if}}</p>
+                            {{/if}}
+
                             {{#if delivery}}
-                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #8e3b5b;">{{texts.deliveryTitle}}</p>
-                            <table cellspacing="0" cellpadding="4" border="0" style="font-size: 14px; background-color: #fbf4f6; border-radius: 10px; width: 100%;">
+                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #7a5a35;">{{texts.deliveryTitle}}</p>
+                            <table cellspacing="0" cellpadding="4" border="0" style="font-size: 14px; background-color: #fdf1f4; border-radius: 10px; width: 100%;">
                                 <tr><td width="40%"><b>{{texts.deliveryType}}</b></td><td>{{delivery.type}}</td></tr>
                                 <tr><td><b>{{texts.courierName}}</b></td><td>{{delivery.courierName}}</td></tr>
                                 {{#if delivery.vehiclePlate}}<tr><td><b>{{texts.vehiclePlate}}</b></td><td>{{delivery.vehiclePlate}}</td></tr>{{/if}}
@@ -63,20 +89,22 @@
                             </table>
                             {{/if}}
 
-                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #8e3b5b;">{{texts.contactTitle}}</p>
+                            {{#if contact}}
+                            <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #7a5a35;">{{texts.contactTitle}}</p>
                             <p style="font-size: 14px; line-height: 1.6; margin: 0;">
-                                {{order.customerName}}<br>
-                                {{order.customerPhone}}<br>
-                                {{order.customerEmail}}
-                                {{#if order.address}}<br>{{order.address}}{{/if}}
-                                {{#if order.notes}}<br><i>{{order.notes}}</i>{{/if}}
+                                {{contact.name}}<br>
+                                {{contact.phone}}<br>
+                                {{contact.email}}
+                                {{#if contact.address}}<br>{{contact.address}}{{/if}}
+                                {{#if contact.notes}}<br><i>{{contact.notes}}</i>{{/if}}
                             </p>
+                            {{/if}}
 
                             <table cellspacing="0" cellpadding="0" border="0" style="margin-top: 28px;">
                                 <tr>
-                                    {{#if trackingUrl}}
+                                    {{#if primaryUrl}}
                                     <td style="padding-right: 12px;">
-                                        <a href="{{trackingUrl}}" style="display: inline-block; padding: 12px 22px; background-color: #8e3b5b; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: 600;">{{texts.trackOrder}}</a>
+                                        <a href="{{primaryUrl}}" style="display: inline-block; padding: 12px 22px; background-color: #a8814f; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: 600;">{{texts.primaryAction}}</a>
                                     </td>
                                     {{/if}}
                                     {{#if whatsappUrl}}
@@ -90,7 +118,7 @@
                     </tr>
 
                     <tr>
-                        <td style="padding: 16px 28px; background-color: #fbf4f6; font-size: 12px; color: #8a6b77;">{{texts.footer}}</td>
+                        <td style="padding: 16px 28px; background-color: #fdf1f4; font-size: 12px; color: #8a6b55;">{{texts.footer}}</td>
                     </tr>
 
                 </table>

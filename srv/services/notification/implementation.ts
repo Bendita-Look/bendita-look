@@ -1,8 +1,10 @@
+import path from 'path';
 import Decimal from 'decimal.js';
+import { PromotionReward } from '@/constants/promotions';
 import { OrderModel } from '@/models/order';
 import { StoreSettingsModel } from '@/models/store-settings';
 import { StoreSettingsService } from '@/services/store-settings';
-import { EmailSender } from '@/infrastructure/EmailSender';
+import { EmailAttachment, EmailSender } from '@/infrastructure/EmailSender';
 import { TemplateRenderer } from '@/infrastructure/TemplateRenderer';
 import { Messages } from '@/infrastructure/Messages';
 import { NotificationService } from './protocols';
@@ -12,13 +14,27 @@ const DEFAULT_NUMBER_LOCALE = 'pt-BR';
 const NUMBER_LOCALES: Record<string, string> = { en: 'en-US', pt: DEFAULT_NUMBER_LOCALE };
 const BRAZIL_COUNTRY_CODE = '55';
 const LOCAL_PHONE_MAX_DIGITS = 11;
+const TEMPLATE_NAME = 'order';
+const LOGO_CID = 'logo';
+const LOGO_FILE = 'logo.jpg';
+
+type EmailKind = 'orderCreated' | 'statusChanged' | 'storeSale';
+
+type EmailOptions = {
+    kind: EmailKind;
+    message: string;
+    showStatus: boolean;
+    showContact: boolean;
+    primaryUrl?: string;
+};
 
 export class NotificationServiceImplementation implements NotificationService {
 
     constructor(
         private readonly EmailSender: EmailSender,
         private readonly TemplateRenderer: TemplateRenderer,
-        private readonly StoreSettingsService: StoreSettingsService
+        private readonly StoreSettingsService: StoreSettingsService,
+        private readonly TemplatesDirectory: string
     ) { }
 
 
@@ -26,12 +42,12 @@ export class NotificationServiceImplementation implements NotificationService {
 
         const oSettings = await this.StoreSettingsService.currentSettings();
 
-        await this.EmailSender.send({
-            fromName: oSettings.StoreName,
-            to: Order.CustomerEmail,
-            cc: oSettings.NotificationEmailList,
-            subject: Messages.text('email.orderCreated.subject', Locale, { store: oSettings.StoreName, number: Order.Number }),
-            html: this.renderOrder(Order, oSettings, Locale, Messages.text('email.orderCreated.message', Locale))
+        await this.send(Order, oSettings, Locale, oSettings.NotificationEmailList, {
+            kind: 'orderCreated',
+            message: Messages.text(Order.IsPickup ? 'email.orderCreated.messagePickup' : 'email.orderCreated.message', Locale),
+            showStatus: true,
+            showContact: true,
+            primaryUrl: this.trackingUrl(Order, oSettings)
         });
 
     }
@@ -41,71 +57,129 @@ export class NotificationServiceImplementation implements NotificationService {
 
         const oSettings = await this.StoreSettingsService.currentSettings();
 
-        await this.EmailSender.send({
-            fromName: oSettings.StoreName,
-            to: Order.CustomerEmail,
-            subject: Messages.text('email.statusChanged.subject', Locale, {
-                store: oSettings.StoreName,
-                number: Order.Number,
-                status: Messages.text(`orderStatus.${Order.Status}`, Locale)
-            }),
-            html: this.renderOrder(Order, oSettings, Locale, Messages.text(`email.statusChanged.message.${Order.Status}`, Locale))
+        await this.send(Order, oSettings, Locale, [], {
+            kind: 'statusChanged',
+            message: Messages.text(`email.statusChanged.message.${Order.Status}`, Locale),
+            showStatus: true,
+            showContact: false,
+            primaryUrl: this.trackingUrl(Order, oSettings)
         });
 
     }
 
 
-    private renderOrder(Order: OrderModel, Settings: StoreSettingsModel, Locale: string | undefined, Message: string): string {
+    public async sendStoreSaleThanks(Order: OrderModel, Locale: string | undefined): Promise<void> {
+
+        const oSettings = await this.StoreSettingsService.currentSettings();
+
+        await this.send(Order, oSettings, Locale, [], {
+            kind: 'storeSale',
+            message: Messages.text('email.storeSale.message', Locale, { store: oSettings.StoreName }),
+            showStatus: false,
+            showContact: false,
+            primaryUrl: oSettings.StoreUrl
+        });
+
+    }
+
+
+    private async send(Order: OrderModel, Settings: StoreSettingsModel, Locale: string | undefined, Copies: string[], Options: EmailOptions): Promise<void> {
+
+        if (!Order.CustomerEmail) {
+            return;
+        }
+
+        await this.EmailSender.send({
+            fromName: Settings.StoreName,
+            to: Order.CustomerEmail,
+            cc: Copies,
+            subject: Messages.text(`email.${Options.kind}.subject`, Locale, {
+                store: Settings.StoreName,
+                number: Order.Number,
+                status: Messages.text(`orderStatus.${Order.Status}`, Locale)
+            }),
+            html: this.render(Order, Settings, Locale, Options),
+            attachments: [this.logoAttachment()]
+        });
+
+    }
+
+
+    private render(Order: OrderModel, Settings: StoreSettingsModel, Locale: string | undefined, Options: EmailOptions): string {
 
         const text = (key: string, args?: Record<string, string | number>) => Messages.text(`email.${key}`, Locale, args);
+        const currency = (value: Decimal) => this.formatCurrency(value, Locale);
 
-        return this.TemplateRenderer.render('order', {
+        return this.TemplateRenderer.render(TEMPLATE_NAME, {
             language: Locale || DEFAULT_NUMBER_LOCALE,
             texts: {
                 title: Settings.StoreName,
-                greeting: text('greeting', { name: Order.CustomerName }),
-                message: Message,
+                greeting: Order.CustomerName ? text('greeting', { name: Order.CustomerName }) : text('greetingAnonymous'),
+                message: Options.message,
                 orderNumber: text('orderNumber', { number: Order.Number }),
                 status: text('status'),
                 itemsTitle: text('itemsTitle'),
                 product: text('product'),
                 quantity: text('quantity'),
                 price: text('price'),
+                subtotal: text('subtotal'),
+                discount: text('discount'),
                 total: text('total'),
+                promotionsTitle: text('promotionsTitle'),
+                pickupTitle: text('pickupTitle'),
+                pickupMessage: text('pickupMessage'),
                 contactTitle: text('contactTitle'),
                 deliveryTitle: text('deliveryTitle'),
                 deliveryType: text('deliveryType'),
                 courierName: text('courierName'),
                 vehiclePlate: text('vehiclePlate'),
                 deliveryNotes: text('deliveryNotes'),
-                trackOrder: text('trackOrder'),
+                primaryAction: text(Options.kind === 'storeSale' ? 'seeMoreItems' : 'trackOrder'),
                 whatsapp: text('whatsapp'),
                 footer: text('footer')
             },
             order: {
-                statusLabel: Messages.text(`orderStatus.${Order.Status}`, Locale),
-                customerName: Order.CustomerName,
-                customerEmail: Order.CustomerEmail,
-                customerPhone: Order.CustomerPhone,
-                address: [Order.Address, Order.District, Order.City, Order.ZipCode].filter(Boolean).join(' - '),
-                notes: Order.Notes,
-                total: this.formatCurrency(Order.TotalAmount, Locale)
+                statusLabel: Options.showStatus ? Messages.text(`orderStatus.${Order.Status}`, Locale) : undefined,
+                hasDiscount: Order.DiscountAmount.greaterThan(0),
+                subtotal: currency(Order.SubtotalAmount),
+                discount: currency(Order.DiscountAmount),
+                total: currency(Order.TotalAmount)
             },
+            items: Order.Items.map((Item) => ({
+                description: [Item.ProductName, Item.ColorName, Item.Size].filter(Boolean).join(' / '),
+                quantity: Item.Quantity,
+                unitPrice: currency(Item.UnitPrice),
+                totalPrice: currency(Item.TotalPrice)
+            })),
+            promotions: Order.Promotions.map((Promotion) => ({
+                name: Promotion.PromotionName,
+                gift: Promotion.RewardType === PromotionReward.Gift ? Promotion.GiftDescription : undefined,
+                discount: Promotion.DiscountAmount.greaterThan(0) ? currency(Promotion.DiscountAmount) : undefined
+            })),
+            pickup: Order.IsPickup && Options.kind !== 'storeSale' ? { address: Settings.PickupAddress } : undefined,
             delivery: Order.DeliveryType ? {
                 type: Messages.text(`deliveryType.${Order.DeliveryType}`, Locale),
                 courierName: Order.CourierName,
                 vehiclePlate: Order.VehiclePlate,
                 notes: Order.DeliveryNotes
             } : undefined,
-            items: Order.Items.map((Item) => ({
-                description: [Item.ProductName, Item.ColorName, Item.Size].filter(Boolean).join(' / '),
-                quantity: Item.Quantity,
-                unitPrice: this.formatCurrency(Item.UnitPrice, Locale),
-                totalPrice: this.formatCurrency(Item.TotalPrice, Locale)
-            })),
-            trackingUrl: this.trackingUrl(Order),
+            contact: Options.showContact ? {
+                name: Order.CustomerName,
+                phone: Order.CustomerPhone,
+                email: Order.CustomerEmail,
+                address: Order.IsPickup ? undefined : Order.FormattedAddress,
+                notes: Order.Notes
+            } : undefined,
+            primaryUrl: Options.primaryUrl,
             whatsappUrl: this.whatsappUrl(Settings.Whatsapp)
         });
+
+    }
+
+
+    private logoAttachment(): EmailAttachment {
+
+        return { filename: LOGO_FILE, path: path.join(this.TemplatesDirectory, LOGO_FILE), cid: LOGO_CID };
 
     }
 
@@ -119,9 +193,9 @@ export class NotificationServiceImplementation implements NotificationService {
     }
 
 
-    private trackingUrl(Order: OrderModel): string | undefined {
+    private trackingUrl(Order: OrderModel, Settings: StoreSettingsModel): string | undefined {
 
-        const sStoreUrl = process.env.STORE_URL;
+        const sStoreUrl = Settings.StoreUrl || process.env.STORE_URL;
 
         return sStoreUrl ? `${sStoreUrl}#/order/${Order.Number}/${Order.AccessCode}` : undefined;
 

@@ -12,6 +12,7 @@ const DEFAULT_STORE_NAME = 'Bendita Look';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_DIGITS = { min: 10, max: 13 };
 const INSTAGRAM_PATTERN = /^@?[A-Za-z0-9._]{1,30}$/;
+const URL_PATTERN = /^https?:\/\/\S+$/;
 
 export class StoreSettingsServiceImplementation extends BaseServiceImplementation<StoreSetting> implements StoreSettingsService {
 
@@ -53,7 +54,9 @@ export class StoreSettingsServiceImplementation extends BaseServiceImplementatio
                 StoreName: oSettings.StoreName,
                 Whatsapp: oSettings.Whatsapp,
                 ContactEmail: oSettings.ContactEmail,
-                Instagram: oSettings.Instagram
+                Instagram: oSettings.Instagram,
+                PickupAddress: oSettings.PickupAddress,
+                StoreUrl: oSettings.StoreUrl
             });
 
         });
@@ -86,7 +89,8 @@ export class StoreSettingsServiceImplementation extends BaseServiceImplementatio
             Whatsapp: process.env.STORE_WHATSAPP,
             ContactEmail: process.env.STORE_EMAIL,
             Instagram: process.env.STORE_INSTAGRAM,
-            NotificationEmails: process.env.ADMIN_EMAILS
+            NotificationEmails: process.env.ADMIN_EMAILS,
+            StoreUrl: process.env.STORE_URL
         });
 
     }
@@ -110,6 +114,10 @@ export class StoreSettingsServiceImplementation extends BaseServiceImplementatio
 
         if (Settings.Instagram && !INSTAGRAM_PATTERN.test(Settings.Instagram.trim())) {
             return left(new ValidationError('error.invalidInstagram'));
+        }
+
+        if (Settings.StoreUrl && !URL_PATTERN.test(Settings.StoreUrl.trim())) {
+            return left(new ValidationError('error.invalidStoreUrl'));
         }
 
         const sInvalidEmail = StoreSettingsModel.splitEmails(Settings.NotificationEmails)

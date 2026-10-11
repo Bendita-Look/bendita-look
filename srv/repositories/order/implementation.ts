@@ -61,7 +61,8 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
         await cds.run(
             INSERT.into(this.getEntity()).entries({
                 ...Order.toEntityObject(),
-                Items: Order.Items.map((Item) => Item.toEntityObject())
+                Items: Order.Items.map((Item) => Item.toEntityObject()),
+                Promotions: Order.Promotions.map((Promotion) => Promotion.toEntityObject())
             })
         );
 
@@ -99,11 +100,12 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
             return null;
         }
 
-        const aItems = await cds.run(
-            SELECT.from(ServiceLocator.getEntity('OrderItems')).where({ Order_ID: oOrder.ID })
-        );
+        const [aItems, aPromotions] = await Promise.all([
+            cds.run(SELECT.from(ServiceLocator.getEntity('OrderItems')).where({ Order_ID: oOrder.ID })),
+            cds.run(SELECT.from(ServiceLocator.getEntity('OrderPromotions')).where({ Order_ID: oOrder.ID }))
+        ]);
 
-        return this.mapResult([{ ...oOrder, Items: aItems }])[0];
+        return this.mapResult([{ ...oOrder, Items: aItems, Promotions: aPromotions }])[0];
 
     }
 

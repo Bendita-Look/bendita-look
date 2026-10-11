@@ -20,3 +20,13 @@ export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
     [OrderStatus.Completed]: [],
     [OrderStatus.Cancelled]: []
 };
+
+export enum OrderChannel {
+    Online = 'ONLINE',
+    Store = 'STORE'
+}
+
+export enum FulfillmentType {
+    Delivery = 'DELIVERY',
+    Pickup = 'PICKUP'
+}

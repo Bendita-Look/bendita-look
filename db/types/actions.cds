@@ -11,15 +11,63 @@ type OrderItemInput {
 }
 
 type OrderInput {
+    CustomerName    : String(120);
+    CustomerEmail   : String(120);
+    CustomerPhone   : String(20);
+    FulfillmentType : String(10);
+    ZipCode         : String(10);
+    Address         : String(200);
+    AddressNumber   : String(20);
+    Complement      : String(80);
+    District        : String(80);
+    City            : String(80);
+    State           : String(2);
+    Notes           : String(500);
+    CouponCode      : String(20);
+    Items           : many OrderItemInput;
+}
+
+type StoreSaleInput {
     CustomerName  : String(120);
     CustomerEmail : String(120);
     CustomerPhone : String(20);
-    Address       : String(200);
-    District      : String(80);
-    City          : String(80);
-    ZipCode       : String(10);
     Notes         : String(500);
+    CouponCode    : String(20);
     Items         : many OrderItemInput;
+}
+
+type QuoteLine {
+    Variant_ID  : UUID;
+    ProductName : String(120);
+    ColorName   : String(40);
+    Size        : String(10);
+    Quantity    : Integer;
+    UnitPrice   : Decimal(15, 2);
+    TotalPrice  : Decimal(15, 2);
+}
+
+type AppliedPromotion {
+    PromotionName   : String(120);
+    RewardType      : String(20);
+    DiscountAmount  : Decimal(15, 2);
+    GiftDescription : String(255);
+    CouponCode      : String(20);
+}
+
+type OrderQuote {
+    SubtotalAmount : Decimal(15, 2);
+    DiscountAmount : Decimal(15, 2);
+    TotalAmount    : Decimal(15, 2);
+    CouponCode     : String(20);
+    CouponStatus   : String(20);
+    CouponMessage  : String(255);
+    Lines          : many QuoteLine;
+    Promotions     : many AppliedPromotion;
+}
+
+type ActivePromotion {
+    Name        : String(120);
+    Description : String(500);
 }
 
 type DeliveryInput {
@@ -30,10 +78,12 @@ type DeliveryInput {
 }
 
 type StoreInfo {
-    StoreName    : String(80);
-    Whatsapp     : String(20);
-    ContactEmail : String(120);
-    Instagram    : String(60);
+    StoreName     : String(80);
+    Whatsapp      : String(20);
+    ContactEmail  : String(120);
+    Instagram     : String(60);
+    PickupAddress : String(255);
+    StoreUrl      : String(255);
 }
 
 type SubmitOrderResult {
@@ -51,10 +101,15 @@ type TrackedOrderItem {
 }
 
 type TrackedOrder {
-    Number       : Integer;
-    Status       : String(20);
-    CustomerName : String(120);
-    TotalAmount  : Decimal(15, 2);
+    Number          : Integer;
+    Status          : String(20);
+    CustomerName    : String(120);
+    FulfillmentType : String(10);
+    SubtotalAmount  : Decimal(15, 2);
+    DiscountAmount  : Decimal(15, 2);
+    TotalAmount     : Decimal(15, 2);
+    CouponCode      : String(20);
+    Promotions      : many AppliedPromotion;
     DeliveryType : String(20);
     CourierName  : String(120);
     VehiclePlate : String(10);

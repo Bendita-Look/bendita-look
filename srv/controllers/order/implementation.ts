@@ -1,4 +1,4 @@
-import { DeliveryInput, Order, OrderInput } from '@models/apps/dflc/benditalook/entities';
+import { DeliveryInput, Order, OrderInput, OrderItemInput, StoreSaleInput } from '@models/apps/dflc/benditalook/entities';
 import { OrderService } from '@/services/order';
 import { BaseControllerResponse } from '@/controllers/base';
 import { OrderController } from './protocols';
@@ -16,6 +16,20 @@ export class OrderControllerImplementation extends BaseControllerImplementation<
     public async submitOrder(Input: OrderInput): Promise<BaseControllerResponse> {
 
         return this.respond(await this.Service.submitOrder(Input), 201);
+
+    }
+
+
+    public async registerStoreSale(Input: StoreSaleInput): Promise<BaseControllerResponse> {
+
+        return this.respond(await this.Service.registerStoreSale(Input), 201);
+
+    }
+
+
+    public async quoteOrder(Items: OrderItemInput[], CouponCode?: string | null): Promise<BaseControllerResponse> {
+
+        return this.respond(await this.Service.quoteOrder(Items, CouponCode), 200);
 
     }
 

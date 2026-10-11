@@ -6,19 +6,33 @@ Backend da loja Bendita Look (SAP CAP + TypeScript). O catálogo é público; a 
 
 | Serviço | Caminho | Acesso | Conteúdo |
 |---|---|---|---|
-| `Catalog` | `/service/Catalog` | Público | Categorias, produtos, cores, fotos, estoque, `SubmitOrder`, `TrackOrder`, `StoreInfo` |
-| `BenditaLook` | `/service/BenditaLook` | Role `Admin` | CRUD com draft de categorias, produtos, configurações da loja e backups, pedidos, `ChangeOrderStatus`, `SalesReport`, `ExportBackup` |
+| `Catalog` | `/service/Catalog` | Público | Categorias, produtos, cores, fotos, estoque, `SubmitOrder`, `QuoteOrder`, `TrackOrder`, `StoreInfo`, `ActivePromotions` |
+| `BenditaLook` | `/service/BenditaLook` | Role `Admin` | CRUD com draft de categorias, produtos, promoções, configurações da loja e backups, pedidos, `ChangeOrderStatus`, `RegisterStoreSale`, `SalesReport`, `ExportBackup` |
 
 ## Fluxo do pedido
 
-1. A cliente envia o carrinho com os dados de contato (`SubmitOrder`), sem cadastro.
-2. O estoque é reservado na mesma transação; se algum item não tiver estoque, nada é gravado.
+1. A cliente envia o carrinho com os dados de contato (`SubmitOrder`), sem cadastro, escolhendo entrega (CEP, endereço e número obrigatórios) ou retirada na loja. O valor é recalculado no servidor com promoções e cupom (`QuoteOrder` mostra a prévia).
+2. O estoque e o uso do cupom são reservados na mesma transação; se algum item não tiver estoque ou o cupom esgotar, nada é gravado.
 3. É enviado um email para a cliente com cópia para os emails de notificação das configurações, com o link de acompanhamento (`STORE_URL#/order/<número>/<código>`).
-4. O admin altera o status: `NEW → IN_SERVICE → OUT_FOR_DELIVERY → COMPLETED` (a entrega é opcional; retirada vai direto de `IN_SERVICE` para `COMPLETED`). `OUT_FOR_DELIVERY` exige tipo de entrega (Uber Flash ou entregador local), nome do entregador e, no Uber Flash, a placa. `CANCELLED` pode ser aplicado a qualquer pedido em aberto e devolve o estoque. Cada mudança envia email para a cliente.
+4. O admin altera o status: `NEW → IN_SERVICE → OUT_FOR_DELIVERY → COMPLETED` (a entrega é opcional; retirada vai direto de `IN_SERVICE` para `COMPLETED`). `OUT_FOR_DELIVERY` exige tipo de entrega (Uber Flash ou entregador local), nome do entregador e, no Uber Flash, a placa. Pedidos de retirada não podem sair para entrega. `CANCELLED` pode ser aplicado a qualquer pedido em aberto e devolve o estoque e o uso do cupom. Cada mudança envia email para a cliente.
+5. Vendas da loja física são registradas pelo admin (`RegisterStoreSale`): canal `STORE`, já concluídas, com baixa de estoque. Nome e email da cliente são opcionais; com email, ela recebe um agradecimento com o link da loja.
+
+## Promoções e cupons
+
+Cadastradas pelo admin em `Promotions` (draft). Cada promoção tem período opcional, abrangência (toda a loja, uma categoria ou um produto), condições (quantidade mínima e valor mínimo das peças elegíveis) e benefício:
+
+| Benefício | Efeito |
+|---|---|
+| `PERCENT` | Desconto percentual sobre as peças elegíveis |
+| `FIXED` | Desconto em valor (limitado ao valor elegível) |
+| `CHEAPEST_FREE` | A cada `MinQuantity` peças, a mais barata sai grátis (leve 3 pague 2) |
+| `GIFT` | Brinde descrito em texto |
+
+Com `CouponCode` a promoção só vale quando a cliente informa o cupom; `MaxUses` limita os usos. Brindes se acumulam; entre os descontos (automáticos e cupom) vale apenas o maior. As datas são avaliadas no fuso `America/Sao_Paulo`.
 
 ## Configurações da loja
 
-Nome, WhatsApp, email de contato, Instagram e emails de notificação ficam na entidade `StoreSettings` (registro único, editado em draft pelo admin). Ela é criada automaticamente no primeiro acesso com os valores das variáveis `STORE_*` e `ADMIN_EMAILS`; depois disso vale o que estiver salvo no admin.
+Nome, WhatsApp, email de contato, Instagram, emails de notificação, endereço de retirada e link da loja (usado nos emails) ficam na entidade `StoreSettings` (registro único, editado em draft pelo admin). Ela é criada automaticamente no primeiro acesso com os valores das variáveis `STORE_*` e `ADMIN_EMAILS`; depois disso vale o que estiver salvo no admin.
 
 Envios de pedido são limitados a 10 por IP a cada 15 minutos (`srv/constants/order-limits.ts`).
 

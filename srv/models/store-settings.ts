@@ -8,6 +8,8 @@ export type StoreSettingsProperties = {
     ContactEmail?: string;
     Instagram?: string;
     NotificationEmails?: string;
+    PickupAddress?: string;
+    StoreUrl?: string;
 };
 
 export class StoreSettingsModel extends BaseModel {
@@ -26,7 +28,9 @@ export class StoreSettingsModel extends BaseModel {
             Whatsapp: Setting.Whatsapp ?? undefined,
             ContactEmail: Setting.ContactEmail ?? undefined,
             Instagram: Setting.Instagram ?? undefined,
-            NotificationEmails: Setting.NotificationEmails ?? undefined
+            NotificationEmails: Setting.NotificationEmails ?? undefined,
+            PickupAddress: Setting.PickupAddress ?? undefined,
+            StoreUrl: Setting.StoreUrl ?? undefined
         }));
 
     }
@@ -40,6 +44,10 @@ export class StoreSettingsModel extends BaseModel {
     public get ContactEmail() { return this.properties.ContactEmail; }
 
     public get Instagram() { return this.properties.Instagram; }
+
+    public get PickupAddress() { return this.properties.PickupAddress; }
+
+    public get StoreUrl() { return this.properties.StoreUrl; }
 
     public static splitEmails(Emails: string | null | undefined): string[] {
 
@@ -64,7 +72,9 @@ export class StoreSettingsModel extends BaseModel {
             Whatsapp: this.properties.Whatsapp,
             ContactEmail: this.properties.ContactEmail,
             Instagram: this.properties.Instagram,
-            NotificationEmails: this.properties.NotificationEmails
+            NotificationEmails: this.properties.NotificationEmails,
+            PickupAddress: this.properties.PickupAddress,
+            StoreUrl: this.properties.StoreUrl
         });
 
     }

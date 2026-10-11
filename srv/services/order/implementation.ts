@@ -1,27 +1,51 @@
 import crypto from 'crypto';
-import Decimal from 'decimal.js';
-import { DeliveryInput, Order, OrderInput, SubmitOrderResult, TrackedOrder } from '@models/apps/dflc/benditalook/entities';
+import {
+    DeliveryInput,
+    Order,
+    OrderInput,
+    OrderItemInput,
+    OrderQuote,
+    StoreSaleInput,
+    SubmitOrderResult,
+    TrackedOrder
+} from '@models/apps/dflc/benditalook/entities';
 import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ConflictError, NotFoundError, TooManyRequestsError, ValidationError } from '@/errors';
-import { DeliveryType, ORDER_STATUS_TRANSITIONS, OrderStatus } from '@/constants/order-status';
-import { OrderDelivery, OrderModel } from '@/models/order';
+import { DeliveryType, FulfillmentType, ORDER_STATUS_TRANSITIONS, OrderChannel, OrderStatus } from '@/constants/order-status';
+import { OrderAddress, OrderDelivery, OrderModel } from '@/models/order';
 import { OrderItemModel } from '@/models/order-item';
-import { OrderableVariantModel } from '@/models/orderable-variant';
+import { OrderPromotionModel } from '@/models/order-promotion';
 import { OrderRepository } from '@/repositories/order';
 import { ProductVariantRepository } from '@/repositories/product-variant';
+import { PromotionRepository } from '@/repositories/promotion';
 import { NotificationService } from '@/services/notification';
+import { PricingService, PriceQuote } from '@/services/pricing';
 import { RateLimiter } from '@/infrastructure/RateLimiter';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
 import { Messages } from '@/infrastructure/Messages';
-import { OrderInputValidator, RequestedItem, ValidOrderInput } from './input-validator';
+import { OrderInputValidator, RequestedItem } from './input-validator';
 import { OrderService } from './protocols';
 import { BaseServiceImplementation } from '../base/implementation';
+
+type NewOrder = OrderAddress & {
+    Channel: OrderChannel;
+    Status: OrderStatus;
+    FulfillmentType: FulfillmentType;
+    CustomerName?: string;
+    CustomerEmail?: string;
+    CustomerPhone?: string;
+    Notes?: string;
+    CouponCode?: string;
+    Items: RequestedItem[];
+};
 
 export class OrderServiceImplementation extends BaseServiceImplementation<Order> implements OrderService {
 
     constructor(
         public readonly Repository: OrderRepository,
         private readonly VariantRepository: ProductVariantRepository,
+        private readonly PromotionRepository: PromotionRepository,
+        private readonly PricingService: PricingService,
         private readonly NotificationService: NotificationService,
         private readonly RateLimiter: RateLimiter,
         private readonly InputValidator: OrderInputValidator = new OrderInputValidator()
@@ -44,7 +68,77 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             return left(oValidation.value);
         }
 
-        return this.execute(() => this.createOrder(oValidation.value));
+        return this.execute(async () => {
+
+            const oCreated = await this.createOrder({ ...oValidation.value, Channel: OrderChannel.Online, Status: OrderStatus.New });
+
+            if (oCreated.isLeft()) {
+                return left(oCreated.value);
+            }
+
+            const oOrder = oCreated.value;
+            const sLocale = ServiceLocator.getLocale();
+
+            ServiceLocator.afterCommit(() => this.NotificationService.sendOrderCreated(oOrder, sLocale));
+
+            return right({ Number: oOrder.Number, AccessCode: oOrder.AccessCode });
+
+        });
+
+    }
+
+
+    public async registerStoreSale(Input: StoreSaleInput): Promise<Either<AbstractError, SubmitOrderResult>> {
+
+        const oValidation = this.InputValidator.validateStoreSale(Input);
+
+        if (oValidation.isLeft()) {
+            return left(oValidation.value);
+        }
+
+        return this.execute(async () => {
+
+            const oCreated = await this.createOrder({
+                ...oValidation.value,
+                Channel: OrderChannel.Store,
+                Status: OrderStatus.Completed,
+                FulfillmentType: FulfillmentType.Pickup
+            });
+
+            if (oCreated.isLeft()) {
+                return left(oCreated.value);
+            }
+
+            const oOrder = oCreated.value;
+            const sLocale = ServiceLocator.getLocale();
+
+            if (oOrder.CustomerEmail) {
+                ServiceLocator.afterCommit(() => this.NotificationService.sendStoreSaleThanks(oOrder, sLocale));
+            }
+
+            return right({ Number: oOrder.Number, AccessCode: oOrder.AccessCode });
+
+        });
+
+    }
+
+
+    public async quoteOrder(Items: OrderItemInput[], CouponCode?: string | null): Promise<Either<AbstractError, OrderQuote>> {
+
+        const oItems = this.InputValidator.validateItems(Items ?? []);
+        const oCoupon = this.InputValidator.normalizeCoupon(CouponCode);
+
+        if (oItems.isLeft()) {
+            return left(oItems.value);
+        }
+
+        if (oCoupon.isLeft()) {
+            return left(oCoupon.value);
+        }
+
+        const oQuote = await this.PricingService.quote(oItems.value, oCoupon.value);
+
+        return oQuote.map((oPriceQuote) => this.PricingService.toOrderQuote(oPriceQuote, ServiceLocator.getLocale()));
 
     }
 
@@ -99,8 +193,13 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 }));
             }
 
+            if (eNewStatus === OrderStatus.OutForDelivery && oOrder.IsPickup) {
+                return left(new ConflictError('error.pickupOrderCannotBeDelivered'));
+            }
+
             if (eNewStatus === OrderStatus.Cancelled) {
                 await this.restoreStock(oOrder);
+                await this.releaseCoupon(oOrder);
             }
 
             await this.Repository.updateStatus(oOrder.Id, eNewStatus, oDelivery.value);
@@ -108,10 +207,138 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             const sLocale = ServiceLocator.getLocale();
             const oUpdatedOrder = oOrder.withStatus(eNewStatus, oDelivery.value);
 
-            ServiceLocator.afterCommit(() => this.NotificationService.sendOrderStatusChanged(oUpdatedOrder, sLocale));
+            if (oUpdatedOrder.CustomerEmail) {
+                ServiceLocator.afterCommit(() => this.NotificationService.sendOrderStatusChanged(oUpdatedOrder, sLocale));
+            }
 
             return right(true);
 
+        });
+
+    }
+
+
+    private async createOrder(Input: NewOrder): Promise<Either<AbstractError, OrderModel>> {
+
+        const oQuote = await this.PricingService.quote(Input.Items, Input.CouponCode);
+
+        if (oQuote.isLeft()) {
+            return left(oQuote.value);
+        }
+
+        const oReservation = await this.reserveStock(oQuote.value);
+
+        if (oReservation.isLeft()) {
+            return left(oReservation.value);
+        }
+
+        const oCoupon = await this.consumeCoupon(oQuote.value);
+
+        if (oCoupon.isLeft()) {
+            return left(oCoupon.value);
+        }
+
+        const oOrder = this.buildOrder(Input, oQuote.value, await this.Repository.findNextNumber());
+
+        await this.Repository.createEntry(oOrder);
+
+        return right(oOrder);
+
+    }
+
+
+    private async reserveStock(Quote: PriceQuote): Promise<Either<AbstractError, boolean>> {
+
+        for (const oLine of Quote.lines) {
+
+            if (!await this.VariantRepository.decreaseStock(oLine.variant.Id, oLine.quantity)) {
+
+                return left(new ConflictError('error.insufficientStock', {
+                    product: oLine.variant.Description,
+                    stock: oLine.variant.Stock
+                }));
+
+            }
+
+        }
+
+        return right(true);
+
+    }
+
+
+    private async consumeCoupon(Quote: PriceQuote): Promise<Either<AbstractError, boolean>> {
+
+        const oCouponPromotion = Quote.promotions.find((oPriced) => oPriced.promotion.IsCoupon);
+
+        if (oCouponPromotion && !await this.PromotionRepository.consumeCoupon(oCouponPromotion.promotion.Id)) {
+            return left(new ConflictError('error.couponExhausted'));
+        }
+
+        return right(true);
+
+    }
+
+
+    private async releaseCoupon(Order: OrderModel): Promise<void> {
+
+        const oCouponPromotion = Order.Promotions.find((oPromotion) => oPromotion.CouponCode && oPromotion.PromotionId);
+
+        if (oCouponPromotion) {
+            await this.PromotionRepository.releaseCoupon(oCouponPromotion.PromotionId as string);
+        }
+
+    }
+
+
+    private buildOrder(Input: NewOrder, Quote: PriceQuote, Number: number): OrderModel {
+
+        const sOrderId = this.generateUUID();
+
+        return OrderModel.with({
+            Id: sOrderId,
+            Number,
+            AccessCode: crypto.randomBytes(16).toString('hex'),
+            Status: Input.Status,
+            Channel: Input.Channel,
+            FulfillmentType: Input.FulfillmentType,
+            CustomerName: Input.CustomerName,
+            CustomerEmail: Input.CustomerEmail,
+            CustomerPhone: Input.CustomerPhone,
+            ZipCode: Input.ZipCode,
+            Address: Input.Address,
+            AddressNumber: Input.AddressNumber,
+            Complement: Input.Complement,
+            District: Input.District,
+            City: Input.City,
+            State: Input.State,
+            Notes: Input.Notes,
+            SubtotalAmount: Quote.subtotal,
+            DiscountAmount: Quote.discount,
+            TotalAmount: Quote.total,
+            CouponCode: Quote.couponCode,
+            Items: Quote.lines.map((oLine) => OrderItemModel.with({
+                Id: this.generateUUID(),
+                OrderId: sOrderId,
+                VariantId: oLine.variant.Id,
+                ProductName: oLine.variant.ProductName,
+                ColorName: oLine.variant.ColorName,
+                Size: oLine.variant.Size,
+                Quantity: oLine.quantity,
+                UnitPrice: oLine.variant.Price,
+                TotalPrice: oLine.total
+            })),
+            Promotions: Quote.promotions.map((oPriced) => OrderPromotionModel.with({
+                Id: this.generateUUID(),
+                OrderId: sOrderId,
+                PromotionId: oPriced.promotion.Id,
+                PromotionName: oPriced.promotion.Name,
+                RewardType: oPriced.promotion.RewardType,
+                DiscountAmount: oPriced.discount,
+                GiftDescription: oPriced.promotion.GiftDescription,
+                CouponCode: oPriced.promotion.CouponCode
+            })),
+            CreatedAt: new Date().toISOString()
         });
 
     }
@@ -143,117 +370,6 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
     }
 
 
-    private async createOrder(Input: ValidOrderInput): Promise<Either<AbstractError, SubmitOrderResult>> {
-
-        const oVariants = await this.findOrderableVariants(Input.Items);
-
-        if (oVariants.isLeft()) {
-            return left(oVariants.value);
-        }
-
-        const oReservation = await this.reserveStock(Input.Items, oVariants.value);
-
-        if (oReservation.isLeft()) {
-            return left(oReservation.value);
-        }
-
-        const oOrder = this.buildOrder(Input, oVariants.value, await this.Repository.findNextNumber());
-
-        await this.Repository.createEntry(oOrder);
-
-        const sLocale = ServiceLocator.getLocale();
-
-        ServiceLocator.afterCommit(() => this.NotificationService.sendOrderCreated(oOrder, sLocale));
-
-        return right({ Number: oOrder.Number, AccessCode: oOrder.AccessCode });
-
-    }
-
-
-    private async findOrderableVariants(Items: RequestedItem[]): Promise<Either<AbstractError, Map<string, OrderableVariantModel>>> {
-
-        const aVariants = await this.VariantRepository.findOrderableByIds(Items.map((oItem) => oItem.VariantId));
-
-        const oVariants = new Map(aVariants.map((oVariant) => [oVariant.Id, oVariant]));
-
-        const bUnavailable = Items.some((oItem) => !oVariants.get(oItem.VariantId)?.ProductActive);
-
-        if (bUnavailable) {
-            return left(new NotFoundError('error.productUnavailable'));
-        }
-
-        return right(oVariants);
-
-    }
-
-
-    private async reserveStock(Items: RequestedItem[], Variants: Map<string, OrderableVariantModel>): Promise<Either<AbstractError, boolean>> {
-
-        for (const oItem of Items) {
-
-            const bReserved = await this.VariantRepository.decreaseStock(oItem.VariantId, oItem.Quantity);
-
-            if (!bReserved) {
-
-                const oVariant = Variants.get(oItem.VariantId) as OrderableVariantModel;
-
-                return left(new ConflictError('error.insufficientStock', {
-                    product: [oVariant.ProductName, oVariant.ColorName, oVariant.Size].filter(Boolean).join(' / '),
-                    stock: oVariant.Stock
-                }));
-
-            }
-
-        }
-
-        return right(true);
-
-    }
-
-
-    private buildOrder(Input: ValidOrderInput, Variants: Map<string, OrderableVariantModel>, Number: number): OrderModel {
-
-        const sOrderId = this.generateUUID();
-
-        const aItems = Input.Items.map((oItem) => {
-
-            const oVariant = Variants.get(oItem.VariantId) as OrderableVariantModel;
-
-            return OrderItemModel.with({
-                Id: this.generateUUID(),
-                OrderId: sOrderId,
-                VariantId: oVariant.Id,
-                ProductName: oVariant.ProductName,
-                ColorName: oVariant.ColorName,
-                Size: oVariant.Size,
-                Quantity: oItem.Quantity,
-                UnitPrice: oVariant.Price,
-                TotalPrice: oVariant.Price.times(oItem.Quantity)
-            });
-
-        });
-
-        return OrderModel.with({
-            Id: sOrderId,
-            Number,
-            AccessCode: crypto.randomBytes(16).toString('hex'),
-            Status: OrderStatus.New,
-            CustomerName: Input.CustomerName,
-            CustomerEmail: Input.CustomerEmail,
-            CustomerPhone: Input.CustomerPhone,
-            Address: Input.Address,
-            District: Input.District,
-            City: Input.City,
-            ZipCode: Input.ZipCode,
-            Notes: Input.Notes,
-            TotalAmount: aItems.reduce((oTotal, oItem) => oTotal.plus(oItem.TotalPrice), new Decimal(0)),
-            Items: aItems,
-            CreatedAt: new Date().toISOString()
-        });
-
-    }
-
-
     private async restoreStock(Order: OrderModel): Promise<void> {
 
         for (const oItem of Order.Items) {
@@ -273,7 +389,18 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             Number: Order.Number,
             Status: Order.Status,
             CustomerName: Order.CustomerName,
+            FulfillmentType: Order.FulfillmentType,
+            SubtotalAmount: Order.SubtotalAmount.toNumber(),
+            DiscountAmount: Order.DiscountAmount.toNumber(),
             TotalAmount: Order.TotalAmount.toNumber(),
+            CouponCode: Order.CouponCode,
+            Promotions: Order.Promotions.map((oPromotion) => ({
+                PromotionName: oPromotion.PromotionName,
+                RewardType: oPromotion.RewardType,
+                DiscountAmount: oPromotion.DiscountAmount.toNumber(),
+                GiftDescription: oPromotion.GiftDescription,
+                CouponCode: oPromotion.CouponCode
+            })),
             DeliveryType: Order.DeliveryType,
             CourierName: Order.CourierName,
             VehiclePlate: Order.VehiclePlate,

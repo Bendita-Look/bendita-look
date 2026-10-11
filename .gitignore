@@ -17,3 +17,6 @@ mta_archives/
 .DS_Store
 *.orig
 *.log
+
+# Configuração local com credenciais
+*.local.md

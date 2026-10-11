@@ -4,3 +4,4 @@ using from './catalog';
 using from './orders';
 using from './backups';
 using from './settings';
+using from './promotions';

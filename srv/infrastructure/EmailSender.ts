@@ -1,12 +1,19 @@
 import cds from '@sap/cds';
 import nodemailer, { Transporter } from 'nodemailer';
 
+export type EmailAttachment = {
+    filename: string;
+    path: string;
+    cid: string;
+};
+
 export type EmailMessage = {
     fromName: string;
     to: string;
     cc?: string[];
     subject: string;
     html: string;
+    attachments?: EmailAttachment[];
 };
 
 export class EmailSender {
@@ -36,7 +43,8 @@ export class EmailSender {
             to: Message.to,
             cc: Message.cc?.length ? Message.cc : undefined,
             subject: Message.subject,
-            html: Message.html
+            html: Message.html,
+            attachments: Message.attachments
         });
 
     }

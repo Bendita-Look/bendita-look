@@ -6,6 +6,7 @@ import { oOrderRouteFactory } from './order';
 import { oBackupRouteFactory } from './backup';
 import { oReportRouteFactory } from './report';
 import { oStoreSettingsRouteFactory } from './store-settings';
+import { oPromotionRouteFactory } from './promotion';
 
 const makeMainRoute = (): MainRoute => {
 
@@ -15,7 +16,8 @@ const makeMainRoute = (): MainRoute => {
         oOrderRouteFactory,
         oBackupRouteFactory,
         oReportRouteFactory,
-        oStoreSettingsRouteFactory
+        oStoreSettingsRouteFactory,
+        oPromotionRouteFactory
     ]);
 
 };

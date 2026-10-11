@@ -26,7 +26,7 @@ modules:
     properties:
       STORE_NAME: Bendita Look
       STORE_URL: https://davicastr.github.io/SAP-UI5-BenditaLook/index.html
-      STORE_WHATSAPP: "558596304756"
+      STORE_WHATSAPP: "5585996304756"
     build-parameters:
       builder: npm-ci
     provides:
