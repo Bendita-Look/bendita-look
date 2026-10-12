@@ -23,6 +23,7 @@ entity Promotions : cuid, managed {
     MinAmount       : Decimal(15, 2);
     RewardType      : PromotionReward @mandatory;
     RewardValue     : Decimal(15, 2);
+    MaxDiscount     : Decimal(15, 2);
     GiftDescription : String(255);
     CouponCode      : String(20);
     MaxUses         : Integer;

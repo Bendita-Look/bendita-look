@@ -173,7 +173,7 @@ export class PricingServiceImplementation extends BaseServiceImplementation<Orde
             return undefined;
         }
 
-        return { promotion: Promotion, discount: this.discountFor(Promotion, aEligible, oAmount).toDecimalPlaces(2) };
+        return { promotion: Promotion, discount: this.limitDiscount(Promotion, this.discountFor(Promotion, aEligible, oAmount)).toDecimalPlaces(2) };
 
     }
 
@@ -195,6 +195,13 @@ export class PricingServiceImplementation extends BaseServiceImplementation<Orde
                 return new Decimal(0);
 
         }
+
+    }
+
+
+    private limitDiscount(Promotion: PromotionModel, Discount: Decimal): Decimal {
+
+        return Promotion.MaxDiscount ? Decimal.min(Discount, Promotion.MaxDiscount) : Discount;
 
     }
 

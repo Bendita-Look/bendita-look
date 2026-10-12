@@ -28,7 +28,7 @@ Cadastradas pelo admin em `Promotions` (draft). Cada promoção tem período opc
 | `CHEAPEST_FREE` | A cada `MinQuantity` peças, a mais barata sai grátis (leve 3 pague 2) |
 | `GIFT` | Brinde descrito em texto |
 
-Com `CouponCode` a promoção só vale quando a cliente informa o cupom; `MaxUses` limita os usos. Brindes se acumulam; entre os descontos (automáticos e cupom) vale apenas o maior. As datas são avaliadas no fuso `America/Sao_Paulo`.
+Com `CouponCode` a promoção só vale quando a cliente informa o cupom; `MaxUses` limita os usos. `MaxDiscount` limita em R$ o desconto percentual e o leve X pague X-1 (ex.: 10% até R$ 10). Brindes se acumulam; entre os descontos (automáticos e cupom) vale apenas o maior. As datas são avaliadas no fuso `America/Sao_Paulo`.
 
 ## Configurações da loja
 

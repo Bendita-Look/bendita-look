@@ -19,6 +19,7 @@ export type PromotionProperties = AuditProperties & {
     MinAmount?: Decimal;
     RewardType: PromotionReward;
     RewardValue?: Decimal;
+    MaxDiscount?: Decimal;
     GiftDescription?: string;
     CouponCode?: string;
     MaxUses?: number;
@@ -49,6 +50,7 @@ export class PromotionModel extends BaseModel {
             MinAmount: Promotion.MinAmount !== null && Promotion.MinAmount !== undefined ? this.retrieveDecimal(Promotion.MinAmount) : undefined,
             RewardType: Promotion.RewardType as PromotionReward,
             RewardValue: Promotion.RewardValue !== null && Promotion.RewardValue !== undefined ? this.retrieveDecimal(Promotion.RewardValue) : undefined,
+            MaxDiscount: Promotion.MaxDiscount !== null && Promotion.MaxDiscount !== undefined ? this.retrieveDecimal(Promotion.MaxDiscount) : undefined,
             GiftDescription: Promotion.GiftDescription ?? undefined,
             CouponCode: Promotion.CouponCode ?? undefined,
             MaxUses: Promotion.MaxUses ?? undefined,
@@ -83,6 +85,8 @@ export class PromotionModel extends BaseModel {
     public get RewardType() { return this.properties.RewardType; }
 
     public get RewardValue() { return this.properties.RewardValue ?? new Decimal(0); }
+
+    public get MaxDiscount() { return this.properties.MaxDiscount; }
 
     public get GiftDescription() { return this.properties.GiftDescription; }
 
@@ -122,6 +126,7 @@ export class PromotionModel extends BaseModel {
             MinAmount: this.properties.MinAmount?.toNumber(),
             RewardType: this.properties.RewardType,
             RewardValue: this.properties.RewardValue?.toNumber(),
+            MaxDiscount: this.properties.MaxDiscount?.toNumber(),
             GiftDescription: this.properties.GiftDescription,
             CouponCode: this.properties.CouponCode,
             MaxUses: this.properties.MaxUses,

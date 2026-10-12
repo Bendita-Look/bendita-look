@@ -113,6 +113,10 @@ export class PromotionServiceImplementation extends BaseServiceImplementation<Pr
             return left(new ValidationError('error.promotionInvalidAmount'));
         }
 
+        if (Promotion.MaxDiscount !== null && Promotion.MaxDiscount !== undefined && !(Number(Promotion.MaxDiscount) > 0)) {
+            return left(new ValidationError('error.promotionInvalidMaxDiscount'));
+        }
+
         if (Promotion.RewardType === PromotionReward.Gift && this.isBlank(Promotion.GiftDescription)) {
             return left(new ValidationError('error.promotionGiftRequired'));
         }
