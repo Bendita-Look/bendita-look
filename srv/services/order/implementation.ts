@@ -12,6 +12,7 @@ import {
 import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ConflictError, NotFoundError, TooManyRequestsError, ValidationError } from '@/errors';
 import { DeliveryType, FulfillmentType, ORDER_STATUS_TRANSITIONS, OrderChannel, OrderStatus } from '@/constants/order-status';
+import { CouponStatus } from '@/constants/promotions';
 import { OrderAddress, OrderDelivery, OrderModel } from '@/models/order';
 import { OrderItemModel } from '@/models/order-item';
 import { OrderPromotionModel } from '@/models/order-promotion';
@@ -224,6 +225,12 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
         if (oQuote.isLeft()) {
             return left(oQuote.value);
+        }
+
+        if (Input.CouponCode && oQuote.value.couponStatus !== CouponStatus.Applied) {
+            return left(new ConflictError('error.couponNotApplied', {
+                reason: Messages.text(`coupon.${oQuote.value.couponStatus}`, ServiceLocator.getLocale())
+            }));
         }
 
         const oReservation = await this.reserveStock(oQuote.value);
