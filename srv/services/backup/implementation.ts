@@ -7,6 +7,7 @@ import { AbstractError, ValidationError } from '@/errors';
 import { BaseRepository } from '@/repositories/base';
 import { BackupRepository } from '@/repositories/backup';
 import { ProductImageRepository } from '@/repositories/product-image';
+import { StoreSettingsRepository } from '@/repositories/store-settings';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
 import { StreamConverter } from '@/infrastructure/StreamConverter';
 import { BackupService } from './protocols';
@@ -14,7 +15,7 @@ import { BaseServiceImplementation } from '../base/implementation';
 
 type ExportableModel = { toEntityObject(): object };
 
-type BackupRow = Record<string, unknown> & { ID?: string; ImageType?: string };
+type BackupRow = Record<string, unknown> & { ID?: string; ImageType?: string; BannerImageType?: string };
 
 export type BackupTable = {
     name: string;
@@ -25,12 +26,15 @@ export type BackupTable = {
 const WORKBOOK_NAME = 'BenditaLook.xlsx';
 const BACKUP_CONTENT_TYPE = 'application/zip';
 const IMAGES_TABLE = 'ProductImages';
+const SETTINGS_TABLE = 'StoreSettings';
+const BANNER_FILE = 'banner';
 
 export class BackupServiceImplementation extends BaseServiceImplementation<Backup> implements BackupService {
 
     constructor(
         public readonly Repository: BackupRepository,
         private readonly ImageRepository: ProductImageRepository,
+        private readonly SettingsRepository: StoreSettingsRepository,
         private readonly Tables: BackupTable[]
     ) {
 
@@ -69,6 +73,7 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
             }
 
             await this.addImages(oZip);
+            await this.addBanner(oZip);
 
             oZip.addFile(WORKBOOK_NAME, Buffer.from(await oWorkbook.xlsx.writeBuffer()));
 
@@ -135,7 +140,7 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
 
         const aNewRows = aRows
             .filter((oRow) => !oExistingIds.has(oRow.ID))
-            .map((oRow) => Table.name === IMAGES_TABLE ? this.attachImage(oRow, Zip) : oRow);
+            .map((oRow) => this.attachMedia(Table.name, oRow, Zip));
 
         await Table.repository.upsertEntries(aNewRows);
 
@@ -167,6 +172,39 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
             }
 
         }
+
+    }
+
+
+    private async addBanner(Zip: AdmZip): Promise<void> {
+
+        const oSettings = await this.SettingsRepository.findBannerContent();
+        const oBuffer = await StreamConverter.toBuffer(oSettings?.BannerImage);
+
+        if (oBuffer && oSettings?.BannerExtension) {
+            Zip.addFile(`${BANNER_FILE}.${oSettings.BannerExtension}`, oBuffer);
+        }
+
+    }
+
+
+    private attachMedia(TableName: string, Row: BackupRow, Zip: AdmZip): BackupRow {
+
+        if (TableName === IMAGES_TABLE) {
+            return this.attachImage(Row, Zip);
+        }
+
+        return TableName === SETTINGS_TABLE ? this.attachBanner(Row, Zip) : Row;
+
+    }
+
+
+    private attachBanner(Row: BackupRow, Zip: AdmZip): BackupRow {
+
+        const sExtension = Row.BannerImageType?.split('/')[1];
+        const oEntry = sExtension ? Zip.getEntry(`${BANNER_FILE}.${sExtension}`) : null;
+
+        return oEntry ? { ...Row, BannerImage: oEntry.getData() } : { ...Row, BannerImageType: undefined };
 
     }
 

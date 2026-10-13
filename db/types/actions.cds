@@ -84,6 +84,8 @@ type StoreInfo {
     Instagram     : String(60);
     PickupAddress : String(255);
     StoreUrl      : String(255);
+    BannerId      : UUID;
+    BannerVersion : String(40);
 }
 
 type SubmitOrderResult {

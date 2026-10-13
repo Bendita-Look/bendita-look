@@ -32,7 +32,7 @@ Com `CouponCode` a promoção só vale quando a cliente informa o cupom; `MaxUse
 
 ## Configurações da loja
 
-Nome, WhatsApp, email de contato, Instagram, emails de notificação, endereço de retirada e link da loja (usado nos emails) ficam na entidade `StoreSettings` (registro único, editado em draft pelo admin). Ela é criada automaticamente no primeiro acesso com os valores das variáveis `STORE_*` e `ADMIN_EMAILS`; depois disso vale o que estiver salvo no admin.
+Nome, WhatsApp, email de contato, Instagram, emails de notificação, endereço de retirada, link da loja (usado nos emails) e a imagem do banner da vitrine (`BannerImage`, pública em `/service/Catalog/StoreBanners(<ID>)/BannerImage` e incluída no backup como `banner.<extensão>`) ficam na entidade `StoreSettings` (registro único, editado em draft pelo admin). Ela é criada automaticamente no primeiro acesso com os valores das variáveis `STORE_*` e `ADMIN_EMAILS`; depois disso vale o que estiver salvo no admin.
 
 Envios de pedido são limitados a 10 por IP a cada 15 minutos (`srv/constants/order-limits.ts`).
 

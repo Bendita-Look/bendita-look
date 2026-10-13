@@ -20,6 +20,19 @@ export class StoreSettingsRepositoryImplementation extends BaseRepositoryImpleme
     }
 
 
+    public async findBannerContent(): Promise<StoreSettingsModel | null> {
+
+        const oRows = await cds.run(
+            SELECT.from(this.getEntity())
+                .columns('ID', 'StoreName', 'BannerImage', 'BannerImageType')
+                .where({ ID: STORE_SETTINGS_ID })
+        );
+
+        return this.mapResult(oRows)[0] ?? null;
+
+    }
+
+
     protected entityName(): string {
 
         return 'StoreSettings';

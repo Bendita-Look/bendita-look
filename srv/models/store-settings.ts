@@ -1,7 +1,8 @@
 import { StoreSetting, StoreSettings } from '@models/apps/dflc/benditalook/entities';
-import { BaseModel } from './base';
+import { Readable } from 'stream';
+import { AuditProperties, BaseModel } from './base';
 
-export type StoreSettingsProperties = {
+export type StoreSettingsProperties = AuditProperties & {
     Id: string;
     StoreName: string;
     Whatsapp?: string;
@@ -10,6 +11,8 @@ export type StoreSettingsProperties = {
     NotificationEmails?: string;
     PickupAddress?: string;
     StoreUrl?: string;
+    BannerImageType?: string;
+    BannerImage?: Readable;
 };
 
 export class StoreSettingsModel extends BaseModel {
@@ -30,7 +33,10 @@ export class StoreSettingsModel extends BaseModel {
             Instagram: Setting.Instagram ?? undefined,
             NotificationEmails: Setting.NotificationEmails ?? undefined,
             PickupAddress: Setting.PickupAddress ?? undefined,
-            StoreUrl: Setting.StoreUrl ?? undefined
+            StoreUrl: Setting.StoreUrl ?? undefined,
+            BannerImageType: Setting.BannerImageType ?? undefined,
+            BannerImage: (Setting.BannerImage as unknown as Readable) ?? undefined,
+            ...this.retrieveAudit(Setting)
         }));
 
     }
@@ -48,6 +54,16 @@ export class StoreSettingsModel extends BaseModel {
     public get PickupAddress() { return this.properties.PickupAddress; }
 
     public get StoreUrl() { return this.properties.StoreUrl; }
+
+    public get BannerImageType() { return this.properties.BannerImageType; }
+
+    public get BannerImage() { return this.properties.BannerImage; }
+
+    public get HasBanner() { return Boolean(this.properties.BannerImageType); }
+
+    public get BannerExtension() { return this.properties.BannerImageType?.split('/')[1]; }
+
+    public get ModifiedAt() { return this.properties.ModifiedAt; }
 
     public static splitEmails(Emails: string | null | undefined): string[] {
 
@@ -74,7 +90,8 @@ export class StoreSettingsModel extends BaseModel {
             Instagram: this.properties.Instagram,
             NotificationEmails: this.properties.NotificationEmails,
             PickupAddress: this.properties.PickupAddress,
-            StoreUrl: this.properties.StoreUrl
+            StoreUrl: this.properties.StoreUrl,
+            BannerImageType: this.properties.BannerImageType
         });
 
     }

@@ -39,6 +39,14 @@ service Catalog {
     entity ProductImages   as projection on entities.ProductImages;
 
     @readonly
+    entity StoreBanners    as
+        projection on entities.StoreSettings {
+            ID,
+            BannerImage,
+            BannerImageType
+        };
+
+    @readonly
     entity ProductVariants as projection on entities.ProductVariants excluding {
         StockOnEdit
     };
