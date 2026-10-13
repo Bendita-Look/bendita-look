@@ -43,7 +43,18 @@
                                 </tr>
                                 {{#each items}}
                                 <tr style="border-bottom: 1px solid #f6e2e7;">
-                                    <td>{{description}}</td>
+                                    <td>
+                                        <table cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                {{#if imageCid}}
+                                                <td style="padding-right: 10px;">
+                                                    <img src="cid:{{imageCid}}" alt="{{description}}" width="56" height="74" style="display: block; width: 56px; height: 74px; object-fit: cover; border-radius: 8px;">
+                                                </td>
+                                                {{/if}}
+                                                <td>{{description}}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
                                     <td align="center">{{quantity}}</td>
                                     <td align="right">{{unitPrice}}</td>
                                     <td align="right">{{totalPrice}}</td>
@@ -95,6 +106,7 @@
                                 {{contact.name}}<br>
                                 {{contact.phone}}<br>
                                 {{contact.email}}
+                                <br>{{texts.fulfillment}}: <b>{{contact.fulfillment}}</b>
                                 {{#if contact.address}}<br>{{contact.address}}{{/if}}
                                 {{#if contact.notes}}<br><i>{{contact.notes}}</i>{{/if}}
                             </p>

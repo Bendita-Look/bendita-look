@@ -20,6 +20,7 @@ export class ProductVariantRepositoryImplementation extends BaseRepositoryImplem
                     'Size',
                     'Stock',
                     'Product_ID as ProductId',
+                    'Color_ID as ColorId',
                     'Product.Category_ID as CategoryId',
                     'Product.Name as ProductName',
                     'Product.Price as Price',

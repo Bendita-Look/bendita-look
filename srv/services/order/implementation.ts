@@ -19,6 +19,7 @@ import { OrderPromotionModel } from '@/models/order-promotion';
 import { OrderRepository } from '@/repositories/order';
 import { ProductVariantRepository } from '@/repositories/product-variant';
 import { PromotionRepository } from '@/repositories/promotion';
+import { ProductImageRepository } from '@/repositories/product-image';
 import { NotificationService } from '@/services/notification';
 import { PricingService, PriceQuote } from '@/services/pricing';
 import { RateLimiter } from '@/infrastructure/RateLimiter';
@@ -46,6 +47,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
         public readonly Repository: OrderRepository,
         private readonly VariantRepository: ProductVariantRepository,
         private readonly PromotionRepository: PromotionRepository,
+        private readonly ImageRepository: ProductImageRepository,
         private readonly PricingService: PricingService,
         private readonly NotificationService: NotificationService,
         private readonly RateLimiter: RateLimiter,
@@ -245,7 +247,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             return left(oCoupon.value);
         }
 
-        const oOrder = this.buildOrder(Input, oQuote.value, await this.Repository.findNextNumber());
+        const oCovers = await this.coverImages(oQuote.value.lines);
+        const oOrder = this.buildOrder(Input, oQuote.value, oCovers, await this.Repository.findNextNumber());
 
         await this.Repository.createEntry(oOrder);
 
@@ -298,7 +301,23 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
     }
 
 
-    private buildOrder(Input: NewOrder, Quote: PriceQuote, Number: number): OrderModel {
+    private async coverImages(Lines: PriceQuote['lines']): Promise<Map<string, string>> {
+
+        const aImages = await this.ImageRepository.findByProductIds([...new Set(Lines.map((oLine) => oLine.variant.ProductId))]);
+
+        return new Map(Lines.flatMap((oLine): [string, string][] => {
+
+            const aProductImages = aImages.filter((oImage) => oImage.ProductId === oLine.variant.ProductId);
+            const oCover = aProductImages.find((oImage) => oImage.ColorId === oLine.variant.ColorId) ?? aProductImages[0];
+
+            return oCover ? [[oLine.variant.Id, oCover.Id]] : [];
+
+        }));
+
+    }
+
+
+    private buildOrder(Input: NewOrder, Quote: PriceQuote, Covers: Map<string, string>, Number: number): OrderModel {
 
         const sOrderId = this.generateUUID();
 
@@ -328,6 +347,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 Id: this.generateUUID(),
                 OrderId: sOrderId,
                 VariantId: oLine.variant.Id,
+                ProductId: oLine.variant.ProductId,
+                ImageId: Covers.get(oLine.variant.Id),
                 ProductName: oLine.variant.ProductName,
                 ColorName: oLine.variant.ColorName,
                 Size: oLine.variant.Size,
@@ -415,6 +436,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             createdAt: Order.CreatedAt,
             modifiedAt: Order.ModifiedAt,
             Items: Order.Items.map((oItem) => ({
+                ProductId: oItem.ProductId,
+                ImageId: oItem.ImageId,
                 ProductName: oItem.ProductName,
                 ColorName: oItem.ColorName,
                 Size: oItem.Size,

@@ -92,6 +92,8 @@ type SubmitOrderResult {
 }
 
 type TrackedOrderItem {
+    ProductId   : UUID;
+    ImageId     : UUID;
     ProductName : String(120);
     ColorName   : String(40);
     Size        : String(10);

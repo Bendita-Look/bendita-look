@@ -34,6 +34,10 @@ export class ProductImageModel extends BaseModel {
 
     public get Id() { return this.properties.Id; }
 
+    public get ProductId() { return this.properties.ProductId; }
+
+    public get ColorId() { return this.properties.ColorId; }
+
     public get ImageType() { return this.properties.ImageType; }
 
     public get Image() { return this.properties.Image; }

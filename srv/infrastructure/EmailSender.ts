@@ -3,13 +3,15 @@ import nodemailer, { Transporter } from 'nodemailer';
 
 export type EmailAttachment = {
     filename: string;
-    path: string;
     cid: string;
+    path?: string;
+    content?: Buffer;
+    contentType?: string;
 };
 
 export type EmailMessage = {
     fromName: string;
-    to: string;
+    to: string | string[];
     cc?: string[];
     subject: string;
     html: string;

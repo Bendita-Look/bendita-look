@@ -18,6 +18,24 @@ export class ProductImageRepositoryImplementation extends BaseRepositoryImplemen
     }
 
 
+    public async findByProductIds(ProductIds: string[]): Promise<ProductImageModel[]> {
+
+        if (!ProductIds.length) {
+            return [];
+        }
+
+        const oRows = await cds.run(
+            SELECT.from(this.getEntity())
+                .columns('ID', 'Product_ID', 'Color_ID', 'SortOrder', 'ImageType')
+                .where({ Product_ID: { in: ProductIds } })
+                .orderBy('SortOrder')
+        );
+
+        return this.mapResult(oRows);
+
+    }
+
+
     protected entityName(): string {
 
         return 'ProductImages';

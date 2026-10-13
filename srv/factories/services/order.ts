@@ -5,6 +5,7 @@ import { ORDER_LIMITS } from '@/constants/order-limits';
 import { oOrderRepositoryFactory } from '../repositories/order';
 import { oProductVariantRepositoryFactory } from '../repositories/product-variant';
 import { oPromotionRepositoryFactory } from '../repositories/promotion';
+import { oProductImageRepositoryFactory } from '../repositories/product-image';
 import { oPricingServiceFactory } from './pricing';
 import { oNotificationServiceFactory } from './notification';
 
@@ -14,6 +15,7 @@ const makeOrderService = (): OrderService => {
         oOrderRepositoryFactory,
         oProductVariantRepositoryFactory,
         oPromotionRepositoryFactory,
+        oProductImageRepositoryFactory,
         oPricingServiceFactory,
         oNotificationServiceFactory,
         new RateLimiter(ORDER_LIMITS.maxOrdersPerWindow, ORDER_LIMITS.windowInMinutes)

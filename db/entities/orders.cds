@@ -48,6 +48,8 @@ entity Orders : cuid, managed {
 entity OrderItems : cuid {
     Order       : Association to Orders;
     Variant     : Association to entities.ProductVariants;
+    Product     : Association to entities.Products;
+    ImageId     : UUID;
     ProductName : String(120);
     ColorName   : String(40);
     Size        : String(10);

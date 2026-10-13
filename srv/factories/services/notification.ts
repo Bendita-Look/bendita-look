@@ -4,6 +4,7 @@ import { NotificationServiceImplementation } from '@/services/notification/imple
 import { EmailSender } from '@/infrastructure/EmailSender';
 import { TemplateRenderer } from '@/infrastructure/TemplateRenderer';
 import { oStoreSettingsServiceFactory } from './store-settings';
+import { oProductImageRepositoryFactory } from '../repositories/product-image';
 
 const TEMPLATES_DIRECTORY = path.join(__dirname, '../../services/notification/templates');
 
@@ -13,6 +14,7 @@ const makeNotificationService = (): NotificationService => {
         new EmailSender(),
         new TemplateRenderer(TEMPLATES_DIRECTORY),
         oStoreSettingsServiceFactory,
+        oProductImageRepositoryFactory,
         TEMPLATES_DIRECTORY
     );
 

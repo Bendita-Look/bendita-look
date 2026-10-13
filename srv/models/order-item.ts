@@ -6,6 +6,8 @@ export type OrderItemProperties = {
     Id: string;
     OrderId: string;
     VariantId: string;
+    ProductId?: string;
+    ImageId?: string;
     ProductName: string;
     ColorName?: string;
     Size: string;
@@ -28,6 +30,8 @@ export class OrderItemModel extends BaseModel {
             Id: Item.ID as string,
             OrderId: Item.Order_ID as string,
             VariantId: Item.Variant_ID as string,
+            ProductId: Item.Product_ID ?? undefined,
+            ImageId: Item.ImageId ?? undefined,
             ProductName: Item.ProductName as string,
             ColorName: Item.ColorName ?? undefined,
             Size: Item.Size as string,
@@ -43,6 +47,10 @@ export class OrderItemModel extends BaseModel {
     public get OrderId() { return this.properties.OrderId; }
 
     public get VariantId() { return this.properties.VariantId; }
+
+    public get ProductId() { return this.properties.ProductId; }
+
+    public get ImageId() { return this.properties.ImageId; }
 
     public get ProductName() { return this.properties.ProductName; }
 
@@ -62,6 +70,8 @@ export class OrderItemModel extends BaseModel {
             ID: this.properties.Id,
             Order_ID: this.properties.OrderId,
             Variant_ID: this.properties.VariantId,
+            Product_ID: this.properties.ProductId,
+            ImageId: this.properties.ImageId,
             ProductName: this.properties.ProductName,
             ColorName: this.properties.ColorName,
             Size: this.properties.Size,

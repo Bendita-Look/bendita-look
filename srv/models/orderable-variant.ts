@@ -6,6 +6,7 @@ export type OrderableVariantProperties = {
     Size: string;
     Stock: number;
     ProductId: string;
+    ColorId?: string;
     CategoryId?: string;
     ProductName: string;
     ProductActive: boolean;
@@ -18,6 +19,7 @@ type OrderableVariantRow = {
     Size: string;
     Stock: number | null;
     ProductId: string;
+    ColorId: string | null;
     CategoryId: string | null;
     ProductName: string;
     Price: unknown;
@@ -40,6 +42,7 @@ export class OrderableVariantModel extends BaseModel {
             Size: Row.Size,
             Stock: Row.Stock ?? 0,
             ProductId: Row.ProductId,
+            ColorId: Row.ColorId ?? undefined,
             CategoryId: Row.CategoryId ?? undefined,
             ProductName: Row.ProductName,
             ProductActive: Boolean(Row.ProductName) && Row.ProductActive !== false,
@@ -56,6 +59,8 @@ export class OrderableVariantModel extends BaseModel {
     public get Stock() { return this.properties.Stock; }
 
     public get ProductId() { return this.properties.ProductId; }
+
+    public get ColorId() { return this.properties.ColorId; }
 
     public get CategoryId() { return this.properties.CategoryId; }
 
