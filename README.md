@@ -9,6 +9,18 @@ Backend da loja Bendita Look (SAP CAP + TypeScript). O catálogo é público; a 
 | `Catalog` | `/service/Catalog` | Público | Categorias, produtos, cores, fotos, estoque, `SubmitOrder`, `QuoteOrder`, `TrackOrder`, `StoreInfo`, `ActivePromotions` |
 | `BenditaLook` | `/service/BenditaLook` | Role `Admin` | CRUD com draft de categorias, produtos, promoções, configurações da loja e backups, pedidos, `ChangeOrderStatus`, `RegisterStoreSale`, `SalesReport`, `ExportBackup` |
 
+## Login do admin
+
+O app UI5 autentica pelo XSUAA usando o CAP como intermediário, para que o `clientsecret` nunca chegue ao navegador:
+
+| Endpoint | Uso |
+|---|---|
+| `POST /auth/password` | Login pela tela do app (`username`, `password`), grant `password` do XSUAA. Credenciais recusadas retornam 401 `invalid_credentials`; mais de 10 tentativas por IP em 15 minutos retornam 429 (`srv/constants/auth-limits.ts`). A senha não é registrada em log |
+| `POST /auth/login` | Troca do `code` do fluxo "Entrar com a conta SAP" (authorization code) |
+| `POST /auth/refresh` | Renovação do token |
+
+O login por senha não suporta verificação em duas etapas; com 2FA ativo use "Entrar com a conta SAP".
+
 ## Fluxo do pedido
 
 1. A cliente envia o carrinho com os dados de contato (`SubmitOrder`), sem cadastro, escolhendo entrega (CEP, endereço e número obrigatórios) ou retirada na loja. O valor é recalculado no servidor com promoções e cupom (`QuoteOrder` mostra a prévia).
