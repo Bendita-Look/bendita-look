@@ -2,7 +2,8 @@ name: Start BTP trial
 
 on:
   schedule:
-    - cron: '30 9 * * *'
+    - cron: '1 3 * * *'
+    - cron: '0 22 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -15,9 +16,6 @@ jobs:
     timeout-minutes: 45
 
     env:
-      CF_API: ${{ vars.CF_API || 'https://api.cf.us10-001.hana.ondemand.com' }}
-      CF_ORG: ${{ vars.CF_ORG }}
-      CF_SPACE: ${{ vars.CF_SPACE || 'dev' }}
       CF_APP: ${{ vars.CF_APP || 'BenditaLook-srv' }}
       HANA_INSTANCE: ${{ vars.HANA_INSTANCE }}
 
@@ -25,34 +23,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Cloud Foundry CLI
-        run: |
-          curl -sSL "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8&source=github" | tar -zx -C /tmp cf8
-          sudo install /tmp/cf8 /usr/local/bin/cf
-          cf version
-
-      - name: Check configuration
-        env:
-          CF_USERNAME: ${{ secrets.CF_USERNAME }}
-          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
-        run: |
-          missing=()
-          [[ -n "$CF_USERNAME" ]] || missing+=("secret CF_USERNAME")
-          [[ -n "$CF_PASSWORD" ]] || missing+=("secret CF_PASSWORD")
-          [[ -n "$CF_ORG" ]] || missing+=("variable CF_ORG")
-          if (( ${#missing[@]} )); then
-            echo "::error::Missing repository configuration: ${missing[*]}. Create them in Settings > Secrets and variables > Actions (Repository secrets / Repository variables)."
-            exit 1
-          fi
-
       - name: Log in to Cloud Foundry
-        env:
-          CF_USERNAME: ${{ secrets.CF_USERNAME }}
-          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
-        run: |
-          cf api "$CF_API"
-          cf auth
-          cf target -o "$CF_ORG" -s "$CF_SPACE"
+        uses: ./.github/actions/cf-login
+        with:
+          api: ${{ vars.CF_API || 'https://api.cf.us10-001.hana.ondemand.com' }}
+          org: ${{ vars.CF_ORG }}
+          space: ${{ vars.CF_SPACE || 'dev' }}
+          username: ${{ secrets.CF_USERNAME }}
+          password: ${{ secrets.CF_PASSWORD }}
 
       - name: Start SAP HANA Cloud and the application
         run: bash .github/scripts/start-trial.sh

@@ -96,16 +96,26 @@ cf restage BenditaLook-srv
 
 Depois atribua a role collection `BenditaLook_Admin` ao seu usuário no cockpit (Security > Users).
 
-No trial o HANA Cloud é parado toda noite. O workflow [Start BTP trial](.github/workflows/start-trial.yml) inicia o HANA, reinicia o `BenditaLook-srv` e confere se o catálogo responde, todo dia às 06:30 (Brasília) e também sob demanda em Actions > Start BTP trial > Run workflow.
+No trial o HANA Cloud é parado toda noite. Dois workflows cuidam do ambiente:
+
+| Workflow | Quando roda | O que faz |
+|---|---|---|
+| [Start BTP trial](.github/workflows/start-trial.yml) | 00:01 e 19:00 (Brasília) e sob demanda | Inicia o HANA Cloud, reinicia o `BenditaLook-srv` e confere se o catálogo responde |
+| [Sync UI5 configuration](.github/workflows/sync-ui5-config.yml) | Após cada Start BTP trial com sucesso e sob demanda | Lê a rota do app e a service key do XSUAA (somente `url`, `clientid` e `xsappname`), atualiza `webapp/config/runtime-config.json` no repositório do UI5 e, se mudou, faz o commit que dispara o deploy no GitHub Pages |
 
 | Configuração (Settings > Secrets and variables > Actions) | Tipo | Valor |
 |---|---|---|
 | `CF_USERNAME` | Secret | Email do usuário do BTP |
 | `CF_PASSWORD` | Secret | Senha do usuário do BTP |
+| `UI5_REPO_TOKEN` | Secret | Fine-grained token com *Contents: Read and write* no repositório do UI5 |
 | `CF_ORG` | Variable | Org do Cloud Foundry (ex.: `d4e1c97ctrial`) |
-| `CF_SPACE` | Variable | Opcional, padrão `dev` |
 | `CF_API` | Variable | Opcional, padrão `https://api.cf.us10-001.hana.ondemand.com` |
+| `CF_SPACE` | Variable | Opcional, padrão `dev` |
 | `CF_APP` | Variable | Opcional, padrão `BenditaLook-srv` |
 | `HANA_INSTANCE` | Variable | Opcional; sem ela o workflow usa a primeira instância `hana-cloud*` do space |
+| `UAA_INSTANCE` / `UAA_KEY` | Variable | Opcionais, padrão `BenditaLook-uaa` / `BenditaLook-uaa-key` |
+| `UI5_REPOSITORY` / `UI5_PAGES_URL` | Variable | Opcionais, padrão `DaviCastr/SAP-UI5-BenditaLook` / `https://davicastr.github.io/SAP-UI5-BenditaLook/` |
+
+Ao recriar a conta trial: atualize `CF_ORG` (e `CF_API`, se a região mudar), faça o deploy do CAP e rode **Sync UI5 configuration**.
 
 O GitHub desativa workflows agendados em repositórios sem atividade por 60 dias; nesse caso basta reativá-lo na aba Actions.
