@@ -31,6 +31,20 @@ jobs:
           sudo install /tmp/cf8 /usr/local/bin/cf
           cf version
 
+      - name: Check configuration
+        env:
+          CF_USERNAME: ${{ secrets.CF_USERNAME }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
+        run: |
+          missing=()
+          [[ -n "$CF_USERNAME" ]] || missing+=("secret CF_USERNAME")
+          [[ -n "$CF_PASSWORD" ]] || missing+=("secret CF_PASSWORD")
+          [[ -n "$CF_ORG" ]] || missing+=("variable CF_ORG")
+          if (( ${#missing[@]} )); then
+            echo "::error::Missing repository configuration: ${missing[*]}. Create them in Settings > Secrets and variables > Actions (Repository secrets / Repository variables)."
+            exit 1
+          fi
+
       - name: Log in to Cloud Foundry
         env:
           CF_USERNAME: ${{ secrets.CF_USERNAME }}
