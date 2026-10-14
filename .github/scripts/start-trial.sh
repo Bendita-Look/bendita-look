@@ -12,11 +12,15 @@ hana_instance() {
         return
     fi
 
-    cf services | awk '$2 ~ /^hana-cloud/ { print $1; exit }'
+    local output
+    output="$(cf services)"
+    awk '$2 ~ /^hana-cloud/ && !found { print $1; found = 1 }' <<< "$output"
 }
 
 last_operation() {
-    cf service "$1" | awk '/^[[:space:]]*status:/ { sub(/^[[:space:]]*status:[[:space:]]*/, ""); print; exit }'
+    local output
+    output="$(cf service "$1")"
+    awk '/^[[:space:]]*status:/ && !found { sub(/^[[:space:]]*status:[[:space:]]*/, ""); print; found = 1 }' <<< "$output"
 }
 
 start_hana() {
@@ -55,7 +59,9 @@ start_hana() {
 }
 
 app_route() {
-    cf app "$CF_APP" | awk '/^routes:/ { print $2; exit }' | cut -d, -f1
+    local output
+    output="$(cf app "$CF_APP")"
+    awk '/^routes:/ && !found { split($2, routes, ","); print routes[1]; found = 1 }' <<< "$output"
 }
 
 check_health() {

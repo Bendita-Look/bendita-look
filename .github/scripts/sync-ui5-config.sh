@@ -4,11 +4,15 @@ set -euo pipefail
 CONFIG_FILE="webapp/config/runtime-config.json"
 
 app_route() {
-    cf app "$CF_APP" | awk '/^routes:/ { print $2; exit }' | cut -d, -f1
+    local output
+    output="$(cf app "$CF_APP")"
+    awk '/^routes:/ && !found { split($2, routes, ","); print routes[1]; found = 1 }' <<< "$output"
 }
 
 uaa_credentials() {
-    cf service-key "$UAA_INSTANCE" "$UAA_KEY" | sed -n '/^{/,$p' | jq '.credentials // .'
+    local output
+    output="$(cf service-key "$UAA_INSTANCE" "$UAA_KEY")"
+    sed -n '/^{/,$p' <<< "$output" | jq '.credentials // .'
 }
 
 route="$(app_route)"
