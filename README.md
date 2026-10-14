@@ -96,4 +96,16 @@ cf restage BenditaLook-srv
 
 Depois atribua a role collection `BenditaLook_Admin` ao seu usuário no cockpit (Security > Users).
 
-No trial o HANA Cloud é parado toda noite e precisa ser iniciado novamente no cockpit (ou via `cf`/`btp` CLI) antes de usar o app.
+No trial o HANA Cloud é parado toda noite. O workflow [Start BTP trial](.github/workflows/start-trial.yml) inicia o HANA, reinicia o `BenditaLook-srv` e confere se o catálogo responde, todo dia às 06:30 (Brasília) e também sob demanda em Actions > Start BTP trial > Run workflow.
+
+| Configuração (Settings > Secrets and variables > Actions) | Tipo | Valor |
+|---|---|---|
+| `CF_USERNAME` | Secret | Email do usuário do BTP |
+| `CF_PASSWORD` | Secret | Senha do usuário do BTP |
+| `CF_ORG` | Variable | Org do Cloud Foundry (ex.: `d4e1c97ctrial`) |
+| `CF_SPACE` | Variable | Opcional, padrão `dev` |
+| `CF_API` | Variable | Opcional, padrão `https://api.cf.us10-001.hana.ondemand.com` |
+| `CF_APP` | Variable | Opcional, padrão `BenditaLook-srv` |
+| `HANA_INSTANCE` | Variable | Opcional; sem ela o workflow usa a primeira instância `hana-cloud*` do space |
+
+O GitHub desativa workflows agendados em repositórios sem atividade por 60 dias; nesse caso basta reativá-lo na aba Actions.

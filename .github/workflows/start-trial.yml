@@ -1,0 +1,44 @@
+name: Start BTP trial
+
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: start-trial
+  cancel-in-progress: false
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      CF_API: ${{ vars.CF_API || 'https://api.cf.us10-001.hana.ondemand.com' }}
+      CF_ORG: ${{ vars.CF_ORG }}
+      CF_SPACE: ${{ vars.CF_SPACE || 'dev' }}
+      CF_APP: ${{ vars.CF_APP || 'BenditaLook-srv' }}
+      HANA_INSTANCE: ${{ vars.HANA_INSTANCE }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Cloud Foundry CLI
+        run: |
+          curl -sSL "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8&source=github" | tar -zx -C /tmp cf8
+          sudo install /tmp/cf8 /usr/local/bin/cf
+          cf version
+
+      - name: Log in to Cloud Foundry
+        env:
+          CF_USERNAME: ${{ secrets.CF_USERNAME }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
+        run: |
+          cf api "$CF_API"
+          cf auth
+          cf target -o "$CF_ORG" -s "$CF_SPACE"
+
+      - name: Start SAP HANA Cloud and the application
+        run: bash .github/scripts/start-trial.sh
