@@ -20,3 +20,4 @@ mta_archives/
 
 # Configuração local com credenciais
 *.local.md
+Makefile_*.mta
