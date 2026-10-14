@@ -7,7 +7,7 @@ import { OrderPromotionModel } from './order-promotion';
 
 export type OrderDelivery = {
     DeliveryType: DeliveryType;
-    CourierName: string;
+    CourierName?: string;
     VehiclePlate?: string;
     DeliveryNotes?: string;
 };

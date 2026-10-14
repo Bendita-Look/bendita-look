@@ -11,6 +11,7 @@ type OrderStatus     : String(20) enum {
 type DeliveryType    : String(20) enum {
     UberFlash    = 'UBER_FLASH';
     LocalCourier = 'LOCAL_COURIER';
+    CustomerArranged = 'CUSTOMER_ARRANGED';
 }
 
 type OrderChannel    : String(10) enum {

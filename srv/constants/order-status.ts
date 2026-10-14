@@ -8,7 +8,8 @@ export enum OrderStatus {
 
 export enum DeliveryType {
     UberFlash = 'UBER_FLASH',
-    LocalCourier = 'LOCAL_COURIER'
+    LocalCourier = 'LOCAL_COURIER',
+    CustomerArranged = 'CUSTOMER_ARRANGED'
 }
 
 export const OPEN_ORDER_STATUSES = [OrderStatus.New, OrderStatus.InService, OrderStatus.OutForDelivery];

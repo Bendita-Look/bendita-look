@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import { MonthlySales, ProductSales, SalesReport } from '@models/apps/dflc/benditalook/entities';
 import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ValidationError } from '@/errors';
-import { OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
+import { DeliveryType, OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
 import { OrderModel } from '@/models/order';
 import { OrderRepository } from '@/repositories/order';
 import { ReportService } from './protocols';
@@ -59,6 +59,7 @@ export class ReportServiceImplementation extends BaseServiceImplementation<Sales
             OpenOrders: aOpen.length,
             OpenAmount: this.sumAmounts(aOpen).toNumber(),
             CancelledOrders: Orders.filter((oOrder) => oOrder.Status === OrderStatus.Cancelled).length,
+            CustomerArrangedDeliveries: aCompleted.filter((oOrder) => oOrder.DeliveryType === DeliveryType.CustomerArranged).length,
             Months: this.buildMonths(aCompleted),
             TopProducts: this.buildTopProducts(aCompleted)
         };

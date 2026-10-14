@@ -380,7 +380,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             return left(new ValidationError('error.deliveryTypeRequired'));
         }
 
-        if (this.isBlank(Delivery?.CourierName)) {
+        if (eDeliveryType !== DeliveryType.CustomerArranged && this.isBlank(Delivery?.CourierName)) {
             return left(new ValidationError('error.courierNameRequired'));
         }
 
@@ -390,7 +390,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
         return right({
             DeliveryType: eDeliveryType,
-            CourierName: (Delivery?.CourierName as string).trim(),
+            CourierName: Delivery?.CourierName?.trim() || undefined,
             VehiclePlate: Delivery?.VehiclePlate?.trim().toUpperCase() || undefined,
             DeliveryNotes: Delivery?.DeliveryNotes?.trim() || undefined
         });

@@ -145,6 +145,7 @@ type SalesReport {
     OpenOrders      : Integer;
     OpenAmount      : Decimal(15, 2);
     CancelledOrders : Integer;
+    CustomerArrangedDeliveries : Integer;
     Months          : many MonthlySales;
     TopProducts     : many ProductSales;
 }

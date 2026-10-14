@@ -94,7 +94,7 @@
                             <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #7a5a35;">{{texts.deliveryTitle}}</p>
                             <table cellspacing="0" cellpadding="4" border="0" style="font-size: 14px; background-color: #fdf1f4; border-radius: 10px; width: 100%;">
                                 <tr><td width="40%"><b>{{texts.deliveryType}}</b></td><td>{{delivery.type}}</td></tr>
-                                <tr><td><b>{{texts.courierName}}</b></td><td>{{delivery.courierName}}</td></tr>
+                                {{#if delivery.courierName}}<tr><td><b>{{delivery.courierLabel}}</b></td><td>{{delivery.courierName}}</td></tr>{{/if}}
                                 {{#if delivery.vehiclePlate}}<tr><td><b>{{texts.vehiclePlate}}</b></td><td>{{delivery.vehiclePlate}}</td></tr>{{/if}}
                                 {{#if delivery.notes}}<tr><td><b>{{texts.deliveryNotes}}</b></td><td>{{delivery.notes}}</td></tr>{{/if}}
                             </table>

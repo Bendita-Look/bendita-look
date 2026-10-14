@@ -1,7 +1,7 @@
 import path from 'path';
 import Decimal from 'decimal.js';
 import { PromotionReward } from '@/constants/promotions';
-import { OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
+import { DeliveryType, OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
 import { OrderModel } from '@/models/order';
 import { StoreSettingsModel } from '@/models/store-settings';
 import { StoreSettingsService } from '@/services/store-settings';
@@ -21,6 +21,7 @@ const TEMPLATE_NAME = 'order';
 const LOGO_CID = 'logo';
 const LOGO_FILE = 'logo.jpg';
 const ITEM_IMAGE_CID_PREFIX = 'item-';
+const CUSTOMER_ARRANGED_STATUS_KEY = 'OUT_FOR_DELIVERY_CUSTOMER';
 const DEFAULT_IMAGE_EXTENSION = 'jpg';
 const STORE_LOCALE = undefined;
 
@@ -72,11 +73,14 @@ export class NotificationServiceImplementation implements NotificationService {
         const oSettings = await this.StoreSettingsService.currentSettings();
 
         const bCompleted = Order.Status === OrderStatus.Completed;
+        const sStatusKey = Order.Status === OrderStatus.OutForDelivery && Order.DeliveryType === DeliveryType.CustomerArranged
+            ? CUSTOMER_ARRANGED_STATUS_KEY
+            : Order.Status;
 
         await this.send(Order.CustomerEmail, Order, oSettings, Locale, {
             kind: 'statusChanged',
-            subjectKey: `email.statusChanged.subject.${Order.Status}`,
-            message: Messages.text(`email.statusChanged.message.${Order.Status}`, Locale, { store: oSettings.StoreName }),
+            subjectKey: `email.statusChanged.subject.${sStatusKey}`,
+            message: Messages.text(`email.statusChanged.message.${sStatusKey}`, Locale, { store: oSettings.StoreName }),
             showStatus: true,
             showContact: false,
             primaryUrl: bCompleted ? this.storeUrl(oSettings) : this.trackingUrl(Order, oSettings),
@@ -229,6 +233,7 @@ export class NotificationServiceImplementation implements NotificationService {
             pickup: Order.IsPickup && OPEN_ORDER_STATUSES.includes(Order.Status) ? { address: Settings.PickupAddress } : undefined,
             delivery: Order.DeliveryType ? {
                 type: Messages.text(`deliveryType.${Order.DeliveryType}`, Locale),
+                courierLabel: text(Order.DeliveryType === DeliveryType.CustomerArranged ? 'pickedUpBy' : 'courierName'),
                 courierName: Order.CourierName,
                 vehiclePlate: Order.VehiclePlate,
                 notes: Order.DeliveryNotes
