@@ -1,23 +1,33 @@
-name: Sync UI5 configuration
+name: Setup BTP trial
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: [Start BTP trial]
-    types: [completed]
+    inputs:
+      deploy_cap:
+        description: Build and deploy the CAP application
+        type: boolean
+        default: true
+      configure_smtp:
+        description: Configure email (SMTP) and the store link
+        type: boolean
+        default: true
+      sync_ui5:
+        description: Update the UI5 URLs and publish GitHub Pages
+        type: boolean
+        default: true
 
 concurrency:
-  group: sync-ui5-config
+  group: setup-trial
   cancel-in-progress: false
 
 jobs:
-  sync:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+  setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
 
     env:
       CF_APP: ${{ vars.CF_APP || 'BenditaLook-srv' }}
+      HANA_INSTANCE: ${{ vars.HANA_INSTANCE }}
       UAA_INSTANCE: ${{ vars.UAA_INSTANCE || 'BenditaLook-uaa' }}
       UAA_KEY: ${{ vars.UAA_KEY || 'BenditaLook-uaa-key' }}
       UI5_REPOSITORY: ${{ vars.UI5_REPOSITORY || 'DaviCastr/SAP-UI5-BenditaLook' }}
@@ -27,6 +37,7 @@ jobs:
 
     steps:
       - name: Check UI5 repository token
+        if: inputs.sync_ui5
         env:
           UI5_REPO_TOKEN: ${{ secrets.UI5_REPO_TOKEN }}
         run: |
@@ -39,11 +50,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout UI5 repository
+        if: inputs.sync_ui5
         uses: actions/checkout@v4
         with:
           repository: ${{ env.UI5_REPOSITORY }}
           token: ${{ secrets.UI5_REPO_TOKEN }}
           path: ui5
+
+      - name: Setup Node.js
+        if: inputs.deploy_cap
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
       - name: Log in to Cloud Foundry
         uses: ./.github/actions/cf-login
@@ -54,5 +73,23 @@ jobs:
           username: ${{ secrets.CF_USERNAME }}
           password: ${{ secrets.CF_PASSWORD }}
 
+      - name: Install MultiApps plugin
+        if: inputs.deploy_cap
+        run: cf install-plugin multiapps -r CF-Community -f
+
+      - name: Build and deploy CAP
+        if: inputs.deploy_cap
+        run: bash .github/scripts/deploy-cap.sh
+
+      - name: Configure email and store link
+        if: inputs.configure_smtp
+        env:
+          SMTP_HOST: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ vars.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: bash .github/scripts/configure-smtp.sh
+
       - name: Update UI5 runtime configuration
+        if: inputs.sync_ui5
         run: bash .github/scripts/sync-ui5-config.sh
