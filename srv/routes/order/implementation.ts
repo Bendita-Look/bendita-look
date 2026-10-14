@@ -19,6 +19,24 @@ export class OrderRouteImplementation extends BaseRouteImplementation<Order> imp
 
         Service.on('RegisterStoreSale', this.registerStoreSale.bind(this));
 
+        Service.on('QuoteOrderUpdate', this.quoteOrderUpdate.bind(this));
+
+        Service.on('UpdateOrderItems', this.updateOrderItems.bind(this));
+
+    }
+
+
+    private async quoteOrderUpdate(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.quoteOrderUpdate(Request.data.OrderId, Request.data.Items));
+
+    }
+
+
+    private async updateOrderItems(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.updateOrderItems(Request.data.OrderId, Request.data.Items));
+
     }
 
 

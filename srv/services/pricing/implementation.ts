@@ -10,7 +10,7 @@ import { PromotionRepository } from '@/repositories/promotion';
 import { Messages } from '@/infrastructure/Messages';
 import { StoreCalendar } from '@/infrastructure/StoreCalendar';
 import { RequestedItem } from '@/services/order/input-validator';
-import { PricedLine, PricedPromotion, PriceQuote, PricingService } from './protocols';
+import { PricedLine, PricedPromotion, PriceQuote, PricingService, QuoteOptions } from './protocols';
 import { BaseServiceImplementation } from '../base/implementation';
 
 const PERCENT = 100;
@@ -32,7 +32,7 @@ export class PricingServiceImplementation extends BaseServiceImplementation<Orde
     }
 
 
-    public async quote(Items: RequestedItem[], CouponCode?: string): Promise<Either<AbstractError, PriceQuote>> {
+    public async quote(Items: RequestedItem[], CouponCode?: string, Options: QuoteOptions = {}): Promise<Either<AbstractError, PriceQuote>> {
 
         return this.execute(async () => {
 
@@ -50,11 +50,18 @@ export class PricingServiceImplementation extends BaseServiceImplementation<Orde
                 .map((oPromotion) => this.evaluate(oPromotion, aLines))
                 .filter((oPriced): oPriced is PricedPromotion => Boolean(oPriced));
 
-            const oCoupon = CouponCode ? await this.evaluateCoupon(CouponCode, aLines, sToday) : undefined;
+            const oCoupon = CouponCode ? await this.evaluateCoupon(CouponCode, aLines, sToday, Boolean(Options.couponReserved)) : undefined;
 
             return right(this.buildQuote(aLines, aAutomatic, oCoupon, CouponCode));
 
         });
+
+    }
+
+
+    public async priceItems(Items: RequestedItem[]): Promise<Either<AbstractError, PricedLine[]>> {
+
+        return this.execute(() => this.priceLines(Items));
 
     }
 
@@ -109,7 +116,7 @@ export class PricingServiceImplementation extends BaseServiceImplementation<Orde
     }
 
 
-    private async evaluateCoupon(CouponCode: string, Lines: PricedLine[], Today: string): Promise<CouponEvaluation> {
+    private async evaluateCoupon(CouponCode: string, Lines: PricedLine[], Today: string, Reserved: boolean): Promise<CouponEvaluation> {
 
         const oPromotion = await this.PromotionRepository.findByCouponCode(CouponCode);
 
@@ -117,7 +124,7 @@ export class PricingServiceImplementation extends BaseServiceImplementation<Orde
             return { status: CouponStatus.NotFound };
         }
 
-        if (!oPromotion.HasUsesLeft) {
+        if (!Reserved && !oPromotion.HasUsesLeft) {
             return { status: CouponStatus.Exhausted };
         }
 

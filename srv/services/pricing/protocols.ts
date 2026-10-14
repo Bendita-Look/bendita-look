@@ -28,7 +28,12 @@ export type PriceQuote = {
     couponStatus?: CouponStatus;
 };
 
+export type QuoteOptions = {
+    couponReserved?: boolean;
+};
+
 export interface PricingService {
-    quote(Items: RequestedItem[], CouponCode?: string): Promise<Either<AbstractError, PriceQuote>>;
+    quote(Items: RequestedItem[], CouponCode?: string, Options?: QuoteOptions): Promise<Either<AbstractError, PriceQuote>>;
+    priceItems(Items: RequestedItem[]): Promise<Either<AbstractError, PricedLine[]>>;
     toOrderQuote(Quote: PriceQuote, Locale: string | undefined): OrderQuote;
 }

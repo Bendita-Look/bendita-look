@@ -1,4 +1,5 @@
 import cds from '@sap/cds';
+import Decimal from 'decimal.js';
 import { OrderDelivery, OrderModel } from '@/models/order';
 import { OrderStatus } from '@/constants/order-status';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
@@ -77,6 +78,41 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
     }
 
 
+    public async replaceItems(Order: OrderModel): Promise<void> {
+
+        const oOrder = Order.toEntityObject();
+
+        await cds.run(DELETE.from(ServiceLocator.getEntity('OrderItems')).where({ Order_ID: Order.Id }));
+        await cds.run(DELETE.from(ServiceLocator.getEntity('OrderPromotions')).where({ Order_ID: Order.Id }));
+
+        await cds.run(
+            UPDATE(this.getEntity())
+                .set({
+                    SubtotalAmount: oOrder.SubtotalAmount,
+                    DiscountAmount: oOrder.DiscountAmount,
+                    TotalAmount: oOrder.TotalAmount,
+                    CouponCode: Order.CouponCode ?? null
+                })
+                .where({ ID: Order.Id })
+        );
+
+        await this.insertChildren('OrderItems', Order.Items.map((Item) => Item.toEntityObject()));
+        await this.insertChildren('OrderPromotions', Order.Promotions.map((Promotion) => Promotion.toEntityObject()));
+
+    }
+
+
+    public async addReturnTotals(Id: string, Refund: Decimal, Exchange: Decimal): Promise<void> {
+
+        await cds.run(
+            UPDATE(this.getEntity())
+                .set({ RefundedAmount: { '+=': Refund.toNumber() }, ExchangedAmount: { '+=': Exchange.toNumber() } })
+                .where({ ID: Id })
+        );
+
+    }
+
+
     protected entityName(): string {
 
         return 'Orders';
@@ -99,12 +135,26 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
             return null;
         }
 
-        const [aItems, aPromotions] = await Promise.all([
+        const [aItems, aPromotions, aReturns] = await Promise.all([
             cds.run(SELECT.from(ServiceLocator.getEntity('OrderItems')).where({ Order_ID: oOrder.ID })),
-            cds.run(SELECT.from(ServiceLocator.getEntity('OrderPromotions')).where({ Order_ID: oOrder.ID }))
+            cds.run(SELECT.from(ServiceLocator.getEntity('OrderPromotions')).where({ Order_ID: oOrder.ID })),
+            cds.run(
+                SELECT.from(ServiceLocator.getEntity('OrderReturns'), (oReturn: any) => { oReturn('*'); oReturn.Items((oItem: any) => oItem('*')); })
+                    .where({ Order_ID: oOrder.ID })
+                    .orderBy('createdAt')
+            )
         ]);
 
-        return this.mapResult([{ ...oOrder, Items: aItems, Promotions: aPromotions }])[0];
+        return this.mapResult([{ ...oOrder, Items: aItems, Promotions: aPromotions, Returns: aReturns }])[0];
+
+    }
+
+
+    private async insertChildren(EntityName: string, Entries: object[]): Promise<void> {
+
+        if (Entries.length) {
+            await cds.run(INSERT.into(ServiceLocator.getEntity(EntityName)).entries(Entries));
+        }
 
     }
 

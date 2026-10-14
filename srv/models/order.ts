@@ -4,12 +4,22 @@ import { DeliveryType, FulfillmentType, OrderChannel, OrderStatus } from '@/cons
 import { AuditProperties, BaseModel } from './base';
 import { OrderItemModel } from './order-item';
 import { OrderPromotionModel } from './order-promotion';
+import { OrderReturnModel } from './order-return';
 
 export type OrderDelivery = {
     DeliveryType: DeliveryType;
     CourierName?: string;
     VehiclePlate?: string;
     DeliveryNotes?: string;
+};
+
+export type OrderPricing = {
+    SubtotalAmount: Decimal;
+    DiscountAmount: Decimal;
+    TotalAmount: Decimal;
+    CouponCode?: string;
+    Items: OrderItemModel[];
+    Promotions: OrderPromotionModel[];
 };
 
 export type OrderAddress = {
@@ -37,8 +47,11 @@ export type OrderProperties = AuditProperties & Partial<OrderDelivery> & OrderAd
     DiscountAmount: Decimal;
     TotalAmount: Decimal;
     CouponCode?: string;
+    RefundedAmount?: Decimal;
+    ExchangedAmount?: Decimal;
     Items: OrderItemModel[];
     Promotions: OrderPromotionModel[];
+    Returns?: OrderReturnModel[];
 };
 
 export class OrderModel extends BaseModel {
@@ -77,8 +90,11 @@ export class OrderModel extends BaseModel {
             CourierName: Order.CourierName ?? undefined,
             VehiclePlate: Order.VehiclePlate ?? undefined,
             DeliveryNotes: Order.DeliveryNotes ?? undefined,
+            RefundedAmount: this.retrieveDecimal(Order.RefundedAmount),
+            ExchangedAmount: this.retrieveDecimal(Order.ExchangedAmount),
             Items: OrderItemModel.mapModel(Order.Items ?? []),
             Promotions: OrderPromotionModel.mapModel(Order.Promotions ?? []),
+            Returns: OrderReturnModel.mapModel(Order.Returns ?? []),
             ...this.retrieveAudit(Order)
         }));
 
@@ -123,9 +139,47 @@ export class OrderModel extends BaseModel {
 
     public get CouponCode() { return this.properties.CouponCode; }
 
+    public get RefundedAmount() { return this.properties.RefundedAmount ?? new Decimal(0); }
+
+    public get ExchangedAmount() { return this.properties.ExchangedAmount ?? new Decimal(0); }
+
+    public get RefundableAmount() { return Decimal.max(this.TotalAmount.minus(this.RefundedAmount), 0); }
+
     public get Items() { return this.properties.Items; }
 
     public get Promotions() { return this.properties.Promotions; }
+
+    public get Returns() { return this.properties.Returns ?? []; }
+
+    public returnedQuantity(OrderItemId: string): number {
+
+        return this.Returns
+            .flatMap((Return) => Return.ReturnedItems)
+            .filter((Item) => Item.OrderItemId === OrderItemId)
+            .reduce((iTotal, Item) => iTotal + Item.Quantity, 0);
+
+    }
+
+    public refundFor(Item: OrderItemModel, Quantity: number): Decimal {
+
+        if (!Item.Quantity || this.SubtotalAmount.isZero()) {
+            return new Decimal(0);
+        }
+
+        return Item.TotalPrice
+            .dividedBy(Item.Quantity)
+            .times(Quantity)
+            .times(this.TotalAmount)
+            .dividedBy(this.SubtotalAmount)
+            .toDecimalPlaces(2);
+
+    }
+
+    public withPricing(Pricing: OrderPricing): OrderModel {
+
+        return OrderModel.with({ ...this.properties, ...Pricing });
+
+    }
 
     public get DeliveryType() { return this.properties.DeliveryType; }
 
@@ -173,6 +227,8 @@ export class OrderModel extends BaseModel {
             CourierName: this.properties.CourierName,
             VehiclePlate: this.properties.VehiclePlate,
             DeliveryNotes: this.properties.DeliveryNotes,
+            RefundedAmount: this.properties.RefundedAmount?.toNumber(),
+            ExchangedAmount: this.properties.ExchangedAmount?.toNumber(),
             ...this.auditEntityObject(this.properties)
         });
 

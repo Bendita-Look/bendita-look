@@ -33,6 +33,35 @@
                             </p>
                             {{/if}}
 
+                            {{#if orderReturn}}
+                            <p style="font-size: 16px; font-weight: 600; margin: 0 0 8px; color: #7a5a35;">{{texts.returnedTitle}}</p>
+                            <table width="100%" cellspacing="0" cellpadding="6" border="0" style="border-collapse: collapse; font-size: 14px;">
+                                {{#each orderReturn.returned}}
+                                <tr style="border-bottom: 1px solid #f6e2e7;">
+                                    {{#if imageCid}}<td width="56"><img src="cid:{{imageCid}}" alt="{{description}}" width="44" height="58" style="display: block; width: 44px; height: 58px; object-fit: cover; border-radius: 6px;"></td>{{/if}}
+                                    <td>{{quantity}}x {{description}}</td>
+                                </tr>
+                                {{/each}}
+                            </table>
+                            {{#if orderReturn.replacements.length}}
+                            <p style="font-size: 16px; font-weight: 600; margin: 20px 0 8px; color: #7a5a35;">{{texts.replacementTitle}}</p>
+                            <table width="100%" cellspacing="0" cellpadding="6" border="0" style="border-collapse: collapse; font-size: 14px;">
+                                {{#each orderReturn.replacements}}
+                                <tr style="border-bottom: 1px solid #f6e2e7;">
+                                    {{#if imageCid}}<td width="56"><img src="cid:{{imageCid}}" alt="{{description}}" width="44" height="58" style="display: block; width: 44px; height: 58px; object-fit: cover; border-radius: 6px;"></td>{{/if}}
+                                    <td>{{quantity}}x {{description}}</td>
+                                </tr>
+                                {{/each}}
+                            </table>
+                            {{/if}}
+                            <table width="100%" cellspacing="0" cellpadding="6" border="0" style="font-size: 14px; margin-top: 16px; background-color: #fdf1f4; border-radius: 10px;">
+                                <tr><td>{{texts.refundAmount}}</td><td align="right">{{orderReturn.refund}}</td></tr>
+                                {{#if orderReturn.exchange}}<tr><td>{{texts.exchangeAmount}}</td><td align="right">{{orderReturn.exchange}}</td></tr>{{/if}}
+                                <tr><td colspan="2" style="font-weight: 700; color: #7a5a35;">{{orderReturn.balance}}</td></tr>
+                            </table>
+                            {{/if}}
+
+                            {{#if items.length}}
                             <p style="font-size: 16px; font-weight: 600; margin: 0 0 8px; color: #7a5a35;">{{texts.itemsTitle}}</p>
                             <table width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse: collapse; font-size: 14px;">
                                 <tr style="background-color: #fdf1f4; text-align: left;">
@@ -75,6 +104,7 @@
                                     <td align="right" style="font-weight: 700; color: #7a5a35;">{{order.total}}</td>
                                 </tr>
                             </table>
+                            {{/if}}
 
                             {{#if promotions.length}}
                             <p style="font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: #7a5a35;">{{texts.promotionsTitle}}</p>

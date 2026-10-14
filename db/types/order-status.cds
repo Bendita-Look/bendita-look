@@ -24,6 +24,11 @@ type FulfillmentType : String(10) enum {
     Pickup   = 'PICKUP';
 }
 
+type ReturnItemKind  : String(12) enum {
+    Returned    = 'RETURNED';
+    Replacement = 'REPLACEMENT';
+}
+
 type PromotionScope  : String(10) enum {
     AllItems = 'ALL';
     Category = 'CATEGORY';

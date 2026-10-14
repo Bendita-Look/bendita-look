@@ -28,6 +28,17 @@ O login por senha não suporta verificação em duas etapas; com 2FA ativo use "
 3. A cliente recebe um email com as fotos dos itens e o link de acompanhamento (`STORE_URL#/order/<número>/<código>`). Os emails de notificação das configurações recebem um email dedicado com os itens, os dados de contato, o botão "Iniciar atendimento no WhatsApp" (mensagem já preenchida para a cliente) e o link do admin. Cada item guarda o produto e a foto de capa da cor escolhida, usados no acompanhamento, no admin e nos emails.
 4. O admin altera o status: `NEW → IN_SERVICE → OUT_FOR_DELIVERY → COMPLETED` (a entrega é opcional; retirada vai direto de `IN_SERVICE` para `COMPLETED`). `OUT_FOR_DELIVERY` exige tipo de entrega: Uber Flash (nome do motorista e placa), entregador local (nome) ou por conta da cliente (quando ela chama o próprio Uber/motoboy ou manda alguém buscar; nome e placa opcionais, com email e acompanhamento próprios e total no relatório). Pedidos de retirada não podem sair para entrega. `CANCELLED` pode ser aplicado a qualquer pedido em aberto e devolve o estoque e o uso do cupom. Cada mudança envia email para a cliente.
 5. Vendas da loja física são registradas pelo admin (`RegisterStoreSale`): canal `STORE`, já concluídas, com baixa de estoque. Nome e email da cliente são opcionais; com email, ela recebe um agradecimento com o link da loja.
+6. Pedidos `NEW` ou `IN_SERVICE` podem ter os itens alterados (`QuoteOrderUpdate` para a prévia, `UpdateOrderItems` para gravar): o estoque é ajustado pela diferença, os preços e promoções são recalculados e o cupom do pedido continua valendo sem consumir um novo uso (se deixar de se aplicar, o uso é devolvido). A cliente recebe email com o pedido atualizado.
+
+## Devoluções e trocas
+
+Pedidos `COMPLETED` aceitam devoluções parciais (`QuoteOrderReturn` / `RegisterOrderReturn`), uma ou várias vezes, até a quantidade comprada de cada item:
+
+- o valor devolvido de cada peça é proporcional ao desconto do pedido (preço pago na linha × total / subtotal), limitado ao que ainda não foi devolvido;
+- para cada peça o admin escolhe se ela volta ao estoque (desmarca quando veio com defeito);
+- peças de troca são opcionais, saem do estoque pelo preço atual (sem promoções) e o saldo indica se a cliente paga a diferença ou recebe de volta;
+- o registro fica em `OrderReturns`/`OrderReturnItems`, o pedido acumula `RefundedAmount` e `ExchangedAmount`, a cliente recebe email e vê o histórico no acompanhamento;
+- no relatório, o faturamento líquido desconta as devoluções e soma as trocas no mês do registro, com indicadores e a lista das peças mais devolvidas.
 
 ## Promoções e cupons
 

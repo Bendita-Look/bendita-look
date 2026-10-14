@@ -11,21 +11,27 @@ import {
 } from '@models/apps/dflc/benditalook/entities';
 import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ConflictError, NotFoundError, TooManyRequestsError, ValidationError } from '@/errors';
-import { DeliveryType, FulfillmentType, ORDER_STATUS_TRANSITIONS, OrderChannel, OrderStatus } from '@/constants/order-status';
+import {
+    DeliveryType,
+    EDITABLE_ORDER_STATUSES,
+    FulfillmentType,
+    ORDER_STATUS_TRANSITIONS,
+    OrderChannel,
+    OrderStatus
+} from '@/constants/order-status';
 import { CouponStatus } from '@/constants/promotions';
 import { OrderAddress, OrderDelivery, OrderModel } from '@/models/order';
 import { OrderItemModel } from '@/models/order-item';
-import { OrderPromotionModel } from '@/models/order-promotion';
 import { OrderRepository } from '@/repositories/order';
 import { ProductVariantRepository } from '@/repositories/product-variant';
 import { PromotionRepository } from '@/repositories/promotion';
-import { ProductImageRepository } from '@/repositories/product-image';
 import { NotificationService } from '@/services/notification';
-import { PricingService, PriceQuote } from '@/services/pricing';
+import { PricedLine, PricingService, PriceQuote } from '@/services/pricing';
 import { RateLimiter } from '@/infrastructure/RateLimiter';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
 import { Messages } from '@/infrastructure/Messages';
 import { OrderInputValidator, RequestedItem } from './input-validator';
+import { OrderBuilder } from './order-builder';
 import { OrderService } from './protocols';
 import { BaseServiceImplementation } from '../base/implementation';
 
@@ -47,7 +53,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
         public readonly Repository: OrderRepository,
         private readonly VariantRepository: ProductVariantRepository,
         private readonly PromotionRepository: PromotionRepository,
-        private readonly ImageRepository: ProductImageRepository,
+        private readonly Builder: OrderBuilder,
         private readonly PricingService: PricingService,
         private readonly NotificationService: NotificationService,
         private readonly RateLimiter: RateLimiter,
@@ -221,6 +227,132 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
     }
 
 
+    public async quoteOrderUpdate(OrderId: string, Items: OrderItemInput[]): Promise<Either<AbstractError, OrderQuote>> {
+
+        return this.changeItems(OrderId, Items, false);
+
+    }
+
+
+    public async updateOrderItems(OrderId: string, Items: OrderItemInput[]): Promise<Either<AbstractError, OrderQuote>> {
+
+        return this.changeItems(OrderId, Items, true);
+
+    }
+
+
+    private async changeItems(OrderId: string, Items: OrderItemInput[], Persist: boolean): Promise<Either<AbstractError, OrderQuote>> {
+
+        const oItems = this.InputValidator.validateItems(Items ?? []);
+
+        if (oItems.isLeft()) {
+            return left(oItems.value);
+        }
+
+        return this.execute(async () => {
+
+            const oOrder = await this.Repository.findWithItemsById(OrderId);
+
+            if (!oOrder) {
+                return left(new NotFoundError('error.orderNotFound'));
+            }
+
+            if (!EDITABLE_ORDER_STATUSES.includes(oOrder.Status)) {
+                return left(new ConflictError('error.orderNotEditable', { status: this.statusLabel(oOrder.Status) }));
+            }
+
+            const oQuote = await this.PricingService.quote(oItems.value, oOrder.CouponCode, { couponReserved: true });
+
+            if (oQuote.isLeft()) {
+                return left(oQuote.value);
+            }
+
+            if (Persist) {
+
+                const oApplied = await this.applyItemChange(oOrder, oQuote.value);
+
+                if (oApplied.isLeft()) {
+                    return left(oApplied.value);
+                }
+
+            }
+
+            return right(this.PricingService.toOrderQuote(oQuote.value, ServiceLocator.getLocale()));
+
+        });
+
+    }
+
+
+    private async applyItemChange(Order: OrderModel, Quote: PriceQuote): Promise<Either<AbstractError, boolean>> {
+
+        const oStock = await this.adjustStock(Order.Items, Quote.lines);
+
+        if (oStock.isLeft()) {
+            return left(oStock.value);
+        }
+
+        if (Order.CouponCode && Quote.couponStatus !== CouponStatus.Applied) {
+            await this.releaseCoupon(Order);
+        }
+
+        const oUpdatedOrder = Order.withPricing({
+            SubtotalAmount: Quote.subtotal,
+            DiscountAmount: Quote.discount,
+            TotalAmount: Quote.total,
+            CouponCode: Quote.couponCode,
+            Items: this.Builder.items(Order.Id, Quote.lines, await this.Builder.coverImages(Quote.lines)),
+            Promotions: this.Builder.promotions(Order.Id, Quote)
+        });
+
+        await this.Repository.replaceItems(oUpdatedOrder);
+
+        const sLocale = ServiceLocator.getLocale();
+
+        if (oUpdatedOrder.CustomerEmail) {
+            ServiceLocator.afterCommit(() => this.NotificationService.sendOrderUpdated(oUpdatedOrder, sLocale));
+        }
+
+        return right(true);
+
+    }
+
+
+    private async adjustStock(Current: OrderItemModel[], Lines: PricedLine[]): Promise<Either<AbstractError, boolean>> {
+
+        const oDeltas = new Map<string, number>();
+
+        Current.forEach((oItem) => oDeltas.set(oItem.VariantId, (oDeltas.get(oItem.VariantId) ?? 0) - oItem.Quantity));
+        Lines.forEach((oLine) => oDeltas.set(oLine.variant.Id, (oDeltas.get(oLine.variant.Id) ?? 0) + oLine.quantity));
+
+        for (const [sVariantId, iDelta] of oDeltas) {
+
+            if (iDelta < 0) {
+                await this.VariantRepository.increaseStock(sVariantId, -iDelta);
+            }
+
+        }
+
+        for (const oLine of Lines) {
+
+            const iDelta = oDeltas.get(oLine.variant.Id) ?? 0;
+
+            if (iDelta > 0 && !await this.VariantRepository.decreaseStock(oLine.variant.Id, iDelta)) {
+
+                return left(new ConflictError('error.insufficientStock', {
+                    product: oLine.variant.Description,
+                    stock: oLine.variant.Stock
+                }));
+
+            }
+
+        }
+
+        return right(true);
+
+    }
+
+
     private async createOrder(Input: NewOrder): Promise<Either<AbstractError, OrderModel>> {
 
         const oQuote = await this.PricingService.quote(Input.Items, Input.CouponCode);
@@ -247,7 +379,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             return left(oCoupon.value);
         }
 
-        const oCovers = await this.coverImages(oQuote.value.lines);
+        const oCovers = await this.Builder.coverImages(oQuote.value.lines);
         const oOrder = this.buildOrder(Input, oQuote.value, oCovers, await this.Repository.findNextNumber());
 
         await this.Repository.createEntry(oOrder);
@@ -301,22 +433,6 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
     }
 
 
-    private async coverImages(Lines: PriceQuote['lines']): Promise<Map<string, string>> {
-
-        const aImages = await this.ImageRepository.findByProductIds([...new Set(Lines.map((oLine) => oLine.variant.ProductId))]);
-
-        return new Map(Lines.flatMap((oLine): [string, string][] => {
-
-            const aProductImages = aImages.filter((oImage) => oImage.ProductId === oLine.variant.ProductId);
-            const oCover = aProductImages.find((oImage) => oImage.ColorId === oLine.variant.ColorId) ?? aProductImages[0];
-
-            return oCover ? [[oLine.variant.Id, oCover.Id]] : [];
-
-        }));
-
-    }
-
-
     private buildOrder(Input: NewOrder, Quote: PriceQuote, Covers: Map<string, string>, Number: number): OrderModel {
 
         const sOrderId = this.generateUUID();
@@ -343,29 +459,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             DiscountAmount: Quote.discount,
             TotalAmount: Quote.total,
             CouponCode: Quote.couponCode,
-            Items: Quote.lines.map((oLine) => OrderItemModel.with({
-                Id: this.generateUUID(),
-                OrderId: sOrderId,
-                VariantId: oLine.variant.Id,
-                ProductId: oLine.variant.ProductId,
-                ImageId: Covers.get(oLine.variant.Id),
-                ProductName: oLine.variant.ProductName,
-                ColorName: oLine.variant.ColorName,
-                Size: oLine.variant.Size,
-                Quantity: oLine.quantity,
-                UnitPrice: oLine.variant.Price,
-                TotalPrice: oLine.total
-            })),
-            Promotions: Quote.promotions.map((oPriced) => OrderPromotionModel.with({
-                Id: this.generateUUID(),
-                OrderId: sOrderId,
-                PromotionId: oPriced.promotion.Id,
-                PromotionName: oPriced.promotion.Name,
-                RewardType: oPriced.promotion.RewardType,
-                DiscountAmount: oPriced.discount,
-                GiftDescription: oPriced.promotion.GiftDescription,
-                CouponCode: oPriced.promotion.CouponCode
-            })),
+            Items: this.Builder.items(sOrderId, Quote.lines, Covers),
+            Promotions: this.Builder.promotions(sOrderId, Quote),
             CreatedAt: new Date().toISOString()
         });
 
@@ -444,6 +539,19 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 Quantity: oItem.Quantity,
                 UnitPrice: oItem.UnitPrice.toNumber(),
                 TotalPrice: oItem.TotalPrice.toNumber()
+            })),
+            Returns: Order.Returns.map((oReturn) => ({
+                createdAt: oReturn.CreatedAt,
+                RefundAmount: oReturn.RefundAmount.toNumber(),
+                ExchangeAmount: oReturn.ExchangeAmount.toNumber(),
+                BalanceAmount: oReturn.BalanceAmount.toNumber(),
+                Items: oReturn.Items.map((oItem) => ({
+                    Kind: oItem.Kind,
+                    ProductName: oItem.ProductName,
+                    ColorName: oItem.ColorName,
+                    Size: oItem.Size,
+                    Quantity: oItem.Quantity
+                }))
             }))
         };
 

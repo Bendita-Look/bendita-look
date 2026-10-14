@@ -14,6 +14,8 @@ export enum DeliveryType {
 
 export const OPEN_ORDER_STATUSES = [OrderStatus.New, OrderStatus.InService, OrderStatus.OutForDelivery];
 
+export const EDITABLE_ORDER_STATUSES = [OrderStatus.New, OrderStatus.InService];
+
 export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
     [OrderStatus.New]: [OrderStatus.InService, OrderStatus.Cancelled],
     [OrderStatus.InService]: [OrderStatus.OutForDelivery, OrderStatus.Completed, OrderStatus.Cancelled],
@@ -21,6 +23,11 @@ export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
     [OrderStatus.Completed]: [],
     [OrderStatus.Cancelled]: []
 };
+
+export enum ReturnItemKind {
+    Returned = 'RETURNED',
+    Replacement = 'REPLACEMENT'
+}
 
 export enum OrderChannel {
     Online = 'ONLINE',

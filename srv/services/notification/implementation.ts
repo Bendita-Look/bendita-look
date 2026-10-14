@@ -3,6 +3,8 @@ import Decimal from 'decimal.js';
 import { PromotionReward } from '@/constants/promotions';
 import { DeliveryType, OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
 import { OrderModel } from '@/models/order';
+import { OrderReturnModel } from '@/models/order-return';
+import { OrderReturnItemModel } from '@/models/order-return-item';
 import { StoreSettingsModel } from '@/models/store-settings';
 import { StoreSettingsService } from '@/services/store-settings';
 import { ProductImageRepository } from '@/repositories/product-image';
@@ -25,7 +27,7 @@ const CUSTOMER_ARRANGED_STATUS_KEY = 'OUT_FOR_DELIVERY_CUSTOMER';
 const DEFAULT_IMAGE_EXTENSION = 'jpg';
 const STORE_LOCALE = undefined;
 
-type EmailKind = 'orderCreated' | 'statusChanged' | 'storeSale' | 'newOrder';
+type EmailKind = 'orderCreated' | 'statusChanged' | 'storeSale' | 'newOrder' | 'orderUpdated' | 'orderReturn';
 
 type EmailOptions = {
     kind: EmailKind;
@@ -38,6 +40,13 @@ type EmailOptions = {
     primaryLabel?: string;
     whatsappUrl?: string;
     whatsappLabel?: string;
+    orderReturn?: OrderReturnModel;
+};
+
+type DescribedItem = {
+    ProductName: string;
+    ColorName?: string;
+    Size: string;
 };
 
 export class NotificationServiceImplementation implements NotificationService {
@@ -105,6 +114,38 @@ export class NotificationServiceImplementation implements NotificationService {
     }
 
 
+    public async sendOrderUpdated(Order: OrderModel, Locale: string | undefined): Promise<void> {
+
+        const oSettings = await this.StoreSettingsService.currentSettings();
+
+        await this.send(Order.CustomerEmail, Order, oSettings, Locale, {
+            kind: 'orderUpdated',
+            message: Messages.text('email.orderUpdated.message', Locale),
+            showStatus: true,
+            showContact: false,
+            primaryUrl: this.trackingUrl(Order, oSettings)
+        });
+
+    }
+
+
+    public async sendOrderReturn(Order: OrderModel, Return: OrderReturnModel, Locale: string | undefined): Promise<void> {
+
+        const oSettings = await this.StoreSettingsService.currentSettings();
+
+        await this.send(Order.CustomerEmail, Order, oSettings, Locale, {
+            kind: 'orderReturn',
+            subjectKey: Return.Replacements.length ? 'email.orderReturn.subjectExchange' : 'email.orderReturn.subject',
+            message: Messages.text(Return.Replacements.length ? 'email.orderReturn.messageExchange' : 'email.orderReturn.message', Locale),
+            showStatus: false,
+            showContact: false,
+            primaryUrl: this.trackingUrl(Order, oSettings),
+            orderReturn: Return
+        });
+
+    }
+
+
     private async sendNewOrderToStore(Order: OrderModel, Settings: StoreSettingsModel): Promise<void> {
 
         const sWhatsappMessage = Messages.text('email.newOrder.whatsappMessage', STORE_LOCALE, {
@@ -134,7 +175,7 @@ export class NotificationServiceImplementation implements NotificationService {
             return;
         }
 
-        const oItemImages = await this.itemImages(Order);
+        const oItemImages = await this.itemImages(Options.orderReturn ? Options.orderReturn.Items : Order.Items);
 
         await this.EmailSender.send({
             fromName: Settings.StoreName,
@@ -151,9 +192,9 @@ export class NotificationServiceImplementation implements NotificationService {
     }
 
 
-    private async itemImages(Order: OrderModel): Promise<Map<string, EmailAttachment>> {
+    private async itemImages(Items: { ImageId?: string }[]): Promise<Map<string, EmailAttachment>> {
 
-        const aImageIds = [...new Set(Order.Items.map((Item) => Item.ImageId).filter((Id): Id is string => Boolean(Id)))];
+        const aImageIds = [...new Set(Items.map((Item) => Item.ImageId).filter((Id): Id is string => Boolean(Id)))];
         const oAttachments = new Map<string, EmailAttachment>();
 
         for (const sImageId of aImageIds) {
@@ -206,6 +247,11 @@ export class NotificationServiceImplementation implements NotificationService {
                 courierName: text('courierName'),
                 vehiclePlate: text('vehiclePlate'),
                 deliveryNotes: text('deliveryNotes'),
+                returnedTitle: text('returnedTitle'),
+                replacementTitle: text('replacementTitle'),
+                refundAmount: text('refundAmount'),
+                exchangeAmount: text('exchangeAmount'),
+                balance: text('balance'),
                 primaryAction: Options.primaryLabel ?? text(Options.kind === 'storeSale' ? 'seeMoreItems' : 'trackOrder'),
                 whatsapp: Options.whatsappLabel ?? text('whatsapp'),
                 fulfillment: text('fulfillment'),
@@ -218,14 +264,15 @@ export class NotificationServiceImplementation implements NotificationService {
                 discount: currency(Order.DiscountAmount),
                 total: currency(Order.TotalAmount)
             },
-            items: Order.Items.map((Item) => ({
-                description: [Item.ProductName, Item.ColorName, Item.Size].filter(Boolean).join(' / '),
+            items: Options.orderReturn ? [] : Order.Items.map((Item) => ({
+                description: this.describe(Item),
                 imageCid: Item.ImageId ? ItemImages.get(Item.ImageId)?.cid : undefined,
                 quantity: Item.Quantity,
                 unitPrice: currency(Item.UnitPrice),
                 totalPrice: currency(Item.TotalPrice)
             })),
-            promotions: Order.Promotions.map((Promotion) => ({
+            orderReturn: Options.orderReturn ? this.returnSummary(Options.orderReturn, Locale, ItemImages) : undefined,
+            promotions: Options.orderReturn ? [] : Order.Promotions.map((Promotion) => ({
                 name: Promotion.PromotionName,
                 gift: Promotion.RewardType === PromotionReward.Gift ? Promotion.GiftDescription : undefined,
                 discount: Promotion.DiscountAmount.greaterThan(0) ? currency(Promotion.DiscountAmount) : undefined
@@ -249,6 +296,44 @@ export class NotificationServiceImplementation implements NotificationService {
             primaryUrl: Options.primaryUrl,
             whatsappUrl: Options.whatsappUrl ?? this.whatsappUrl(Settings.Whatsapp)
         });
+
+    }
+
+
+    private returnSummary(Return: OrderReturnModel, Locale: string | undefined, ItemImages: Map<string, EmailAttachment>): object {
+
+        const currency = (value: Decimal) => this.formatCurrency(value, Locale);
+        const line = (Item: OrderReturnItemModel) => ({
+            description: this.describe(Item),
+            imageCid: Item.ImageId ? ItemImages.get(Item.ImageId)?.cid : undefined,
+            quantity: Item.Quantity
+        });
+
+        return {
+            returned: Return.ReturnedItems.map(line),
+            replacements: Return.Replacements.map(line),
+            refund: currency(Return.RefundAmount),
+            exchange: Return.ExchangeAmount.greaterThan(0) ? currency(Return.ExchangeAmount) : undefined,
+            balance: Messages.text(this.balanceKey(Return.BalanceAmount), Locale, { amount: currency(Return.BalanceAmount.abs()) })
+        };
+
+    }
+
+
+    private balanceKey(Balance: Decimal): string {
+
+        if (Balance.isZero()) {
+            return 'email.balanceEven';
+        }
+
+        return Balance.greaterThan(0) ? 'email.balanceToPay' : 'email.balanceToRefund';
+
+    }
+
+
+    private describe(Item: DescribedItem): string {
+
+        return [Item.ProductName, Item.ColorName, Item.Size].filter(Boolean).join(' / ');
 
     }
 

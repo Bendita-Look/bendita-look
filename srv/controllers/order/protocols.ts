@@ -7,4 +7,6 @@ export interface OrderController extends BaseController<Order> {
     quoteOrder(Items: OrderItemInput[], CouponCode?: string | null): Promise<BaseControllerResponse>;
     trackOrder(Number: number, AccessCode: string): Promise<BaseControllerResponse>;
     changeStatus(OrderId: string, Status: string, Delivery?: DeliveryInput | null): Promise<BaseControllerResponse>;
+    quoteOrderUpdate(OrderId: string, Items: OrderItemInput[]): Promise<BaseControllerResponse>;
+    updateOrderItems(OrderId: string, Items: OrderItemInput[]): Promise<BaseControllerResponse>;
 }

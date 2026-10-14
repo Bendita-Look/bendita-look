@@ -47,4 +47,18 @@ export class OrderControllerImplementation extends BaseControllerImplementation<
 
     }
 
+
+    public async quoteOrderUpdate(OrderId: string, Items: OrderItemInput[]): Promise<BaseControllerResponse> {
+
+        return this.respond(await this.Service.quoteOrderUpdate(OrderId, Items), 200);
+
+    }
+
+
+    public async updateOrderItems(OrderId: string, Items: OrderItemInput[]): Promise<BaseControllerResponse> {
+
+        return this.respond(await this.Service.updateOrderItems(OrderId, Items), 200);
+
+    }
+
 }

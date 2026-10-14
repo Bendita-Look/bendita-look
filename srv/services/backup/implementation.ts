@@ -92,7 +92,7 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
 
         return this.execute(async () => {
 
-            const oContent = await StreamConverter.toBuffer(Backup?.Backup);
+            const oContent = await StreamConverter.toBuffer(Backup?.Backup ?? await this.Repository.findDraftContent(Backup.ID as string));
 
             if (!oContent) {
                 return right(true);

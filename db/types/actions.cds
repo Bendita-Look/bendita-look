@@ -70,6 +70,24 @@ type ActivePromotion {
     Description : String(500);
 }
 
+type ReturnItemInput {
+    OrderItem_ID : UUID;
+    Quantity     : Integer;
+    Restock      : Boolean;
+}
+
+type ReturnInput {
+    Reason       : String(255);
+    Items        : many ReturnItemInput;
+    Replacements : many OrderItemInput;
+}
+
+type ReturnQuote {
+    RefundAmount   : Decimal(15, 2);
+    ExchangeAmount : Decimal(15, 2);
+    BalanceAmount  : Decimal(15, 2);
+}
+
 type DeliveryInput {
     DeliveryType  : String(20);
     CourierName   : String(120);
@@ -104,6 +122,22 @@ type TrackedOrderItem {
     TotalPrice  : Decimal(15, 2);
 }
 
+type TrackedReturnItem {
+    Kind        : String(12);
+    ProductName : String(120);
+    ColorName   : String(40);
+    Size        : String(10);
+    Quantity    : Integer;
+}
+
+type TrackedReturn {
+    createdAt      : Timestamp;
+    RefundAmount   : Decimal(15, 2);
+    ExchangeAmount : Decimal(15, 2);
+    BalanceAmount  : Decimal(15, 2);
+    Items          : many TrackedReturnItem;
+}
+
 type TrackedOrder {
     Number          : Integer;
     Status          : String(20);
@@ -121,6 +155,7 @@ type TrackedOrder {
     createdAt    : Timestamp;
     modifiedAt   : Timestamp;
     Items        : many TrackedOrderItem;
+    Returns      : many TrackedReturn;
 }
 
 type MonthlySales {
@@ -128,6 +163,7 @@ type MonthlySales {
     Orders  : Integer;
     Items   : Integer;
     Revenue : Decimal(15, 2);
+    Refunds : Decimal(15, 2);
 }
 
 type ProductSales {
@@ -146,6 +182,12 @@ type SalesReport {
     OpenAmount      : Decimal(15, 2);
     CancelledOrders : Integer;
     CustomerArrangedDeliveries : Integer;
+    GrossRevenue    : Decimal(15, 2);
+    ReturnsCount    : Integer;
+    ReturnedItems   : Integer;
+    RefundedAmount  : Decimal(15, 2);
+    ExchangedAmount : Decimal(15, 2);
     Months          : many MonthlySales;
     TopProducts     : many ProductSales;
+    TopReturned     : many ProductSales;
 }

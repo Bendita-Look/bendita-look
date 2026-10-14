@@ -27,6 +27,12 @@ service BenditaLook {
     @readonly
     entity OrderPromotions as projection on entities.OrderPromotions;
 
+    @readonly
+    entity OrderReturns    as projection on entities.OrderReturns;
+
+    @readonly
+    entity OrderReturnItems as projection on entities.OrderReturnItems;
+
     @odata.draft.enabled
     entity Promotions      as projection on entities.Promotions;
 
@@ -43,6 +49,18 @@ service BenditaLook {
                              Delivery: entities.DeliveryInput)            returns entities.ActionResult;
 
     action RegisterStoreSale(Sale: entities.StoreSaleInput)                returns entities.SubmitOrderResult;
+
+    action QuoteOrderUpdate(OrderId: UUID,
+                            Items: many entities.OrderItemInput)          returns entities.OrderQuote;
+
+    action UpdateOrderItems(OrderId: UUID,
+                            Items: many entities.OrderItemInput)          returns entities.OrderQuote;
+
+    action QuoteOrderReturn(OrderId: UUID,
+                            Return: entities.ReturnInput)                 returns entities.ReturnQuote;
+
+    action RegisterOrderReturn(OrderId: UUID,
+                               Return: entities.ReturnInput)              returns entities.ReturnQuote;
 
     action ExportBackup()                                                 returns entities.ActionResult;
 

@@ -10,7 +10,8 @@ using {
     apps.dflc.benditalook.entities.OrderStatus,
     apps.dflc.benditalook.entities.DeliveryType,
     apps.dflc.benditalook.entities.OrderChannel,
-    apps.dflc.benditalook.entities.FulfillmentType
+    apps.dflc.benditalook.entities.FulfillmentType,
+    apps.dflc.benditalook.entities.ReturnItemKind
 } from '../types/order-status';
 
 @assert.unique: {Number: [Number]}
@@ -39,10 +40,14 @@ entity Orders : cuid, managed {
     CourierName     : String(120);
     VehiclePlate    : String(10);
     DeliveryNotes   : String(255);
+    RefundedAmount  : Decimal(15, 2) default 0;
+    ExchangedAmount : Decimal(15, 2) default 0;
     Items           : Composition of many OrderItems
                           on Items.Order = $self;
     Promotions      : Composition of many OrderPromotions
                           on Promotions.Order = $self;
+    Returns         : Composition of many OrderReturns
+                          on Returns.Order = $self;
 }
 
 entity OrderItems : cuid {
@@ -56,6 +61,32 @@ entity OrderItems : cuid {
     Quantity    : Integer;
     UnitPrice   : Decimal(15, 2);
     TotalPrice  : Decimal(15, 2);
+}
+
+entity OrderReturns : cuid, managed {
+    Order          : Association to Orders;
+    Reason         : String(255);
+    RefundAmount   : Decimal(15, 2);
+    ExchangeAmount : Decimal(15, 2);
+    BalanceAmount  : Decimal(15, 2);
+    Items          : Composition of many OrderReturnItems
+                         on Items.Return = $self;
+}
+
+entity OrderReturnItems : cuid {
+    Return      : Association to OrderReturns;
+    Kind        : ReturnItemKind;
+    OrderItem   : Association to OrderItems;
+    Variant     : Association to entities.ProductVariants;
+    Product     : Association to entities.Products;
+    ImageId     : UUID;
+    ProductName : String(120);
+    ColorName   : String(40);
+    Size        : String(10);
+    Quantity    : Integer;
+    UnitPrice   : Decimal(15, 2);
+    TotalPrice  : Decimal(15, 2);
+    Restock     : Boolean default false;
 }
 
 entity OrderPromotions : cuid {
