@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import {
     DeliveryInput,
     Order,
+    OrderChangeInput,
     OrderInput,
     OrderItemInput,
     OrderQuote,
@@ -227,26 +228,31 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
     }
 
 
-    public async quoteOrderUpdate(OrderId: string, Items: OrderItemInput[]): Promise<Either<AbstractError, OrderQuote>> {
+    public async quoteOrderUpdate(OrderId: string, Change: OrderChangeInput): Promise<Either<AbstractError, OrderQuote>> {
 
-        return this.changeItems(OrderId, Items, false);
-
-    }
-
-
-    public async updateOrderItems(OrderId: string, Items: OrderItemInput[]): Promise<Either<AbstractError, OrderQuote>> {
-
-        return this.changeItems(OrderId, Items, true);
+        return this.changeItems(OrderId, Change, false);
 
     }
 
 
-    private async changeItems(OrderId: string, Items: OrderItemInput[], Persist: boolean): Promise<Either<AbstractError, OrderQuote>> {
+    public async updateOrderItems(OrderId: string, Change: OrderChangeInput): Promise<Either<AbstractError, OrderQuote>> {
 
-        const oItems = this.InputValidator.validateItems(Items ?? []);
+        return this.changeItems(OrderId, Change, true);
+
+    }
+
+
+    private async changeItems(OrderId: string, Change: OrderChangeInput, Persist: boolean): Promise<Either<AbstractError, OrderQuote>> {
+
+        const oItems = this.InputValidator.validateItems(Change?.Items ?? []);
+        const oCoupon = this.InputValidator.normalizeCoupon(Change?.CouponCode);
 
         if (oItems.isLeft()) {
             return left(oItems.value);
+        }
+
+        if (oCoupon.isLeft()) {
+            return left(oCoupon.value);
         }
 
         return this.execute(async () => {
@@ -261,10 +267,20 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 return left(new ConflictError('error.orderNotEditable', { status: this.statusLabel(oOrder.Status) }));
             }
 
-            const oQuote = await this.PricingService.quote(oItems.value, oOrder.CouponCode, { couponReserved: true });
+            const sCouponCode = oCoupon.value;
+            const oQuote = await this.PricingService.quote(oItems.value, sCouponCode, {
+                couponReserved: Boolean(sCouponCode) && sCouponCode === oOrder.CouponCode?.toUpperCase(),
+                automaticPromotions: Change?.ApplyPromotions === true
+            });
 
             if (oQuote.isLeft()) {
                 return left(oQuote.value);
+            }
+
+            if (Persist && sCouponCode && oQuote.value.couponStatus !== CouponStatus.Applied) {
+                return left(new ConflictError('error.couponNotApplied', {
+                    reason: Messages.text(`coupon.${oQuote.value.couponStatus}`, ServiceLocator.getLocale())
+                }));
             }
 
             if (Persist) {
@@ -292,8 +308,10 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             return left(oStock.value);
         }
 
-        if (Order.CouponCode && Quote.couponStatus !== CouponStatus.Applied) {
-            await this.releaseCoupon(Order);
+        const oCoupon = await this.swapCoupon(Order, Quote);
+
+        if (oCoupon.isLeft()) {
+            return left(oCoupon.value);
         }
 
         const oUpdatedOrder = Order.withPricing({
@@ -314,6 +332,24 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
         }
 
         return right(true);
+
+    }
+
+
+    private async swapCoupon(Order: OrderModel, Quote: PriceQuote): Promise<Either<AbstractError, boolean>> {
+
+        const sCurrent = Order.CouponCode?.toUpperCase();
+        const sNext = Quote.couponCode?.toUpperCase();
+
+        if (sCurrent === sNext) {
+            return right(true);
+        }
+
+        if (sCurrent) {
+            await this.releaseCoupon(Order);
+        }
+
+        return sNext ? this.consumeCoupon(Quote) : right(true);
 
     }
 

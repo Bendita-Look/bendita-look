@@ -21,7 +21,7 @@ const BRAZIL_COUNTRY_CODE = '55';
 const LOCAL_PHONE_MAX_DIGITS = 11;
 const TEMPLATE_NAME = 'order';
 const LOGO_CID = 'logo';
-const LOGO_FILE = 'logo.jpg';
+const LOGO_FILE = 'logo.png';
 const ITEM_IMAGE_CID_PREFIX = 'item-';
 const CUSTOMER_ARRANGED_STATUS_KEY = 'OUT_FOR_DELIVERY_CUSTOMER';
 const DEFAULT_IMAGE_EXTENSION = 'jpg';
@@ -272,6 +272,7 @@ export class NotificationServiceImplementation implements NotificationService {
                 totalPrice: currency(Item.TotalPrice)
             })),
             orderReturn: Options.orderReturn ? this.returnSummary(Options.orderReturn, Locale, ItemImages) : undefined,
+            shippingNote: this.hasPendingShipping(Order, Options) ? text('shippingNote') : undefined,
             promotions: Options.orderReturn ? [] : Order.Promotions.map((Promotion) => ({
                 name: Promotion.PromotionName,
                 gift: Promotion.RewardType === PromotionReward.Gift ? Promotion.GiftDescription : undefined,
@@ -316,6 +317,13 @@ export class NotificationServiceImplementation implements NotificationService {
             exchange: Return.ExchangeAmount.greaterThan(0) ? currency(Return.ExchangeAmount) : undefined,
             balance: Messages.text(this.balanceKey(Return.BalanceAmount), Locale, { amount: currency(Return.BalanceAmount.abs()) })
         };
+
+    }
+
+
+    private hasPendingShipping(Order: OrderModel, Options: EmailOptions): boolean {
+
+        return !Order.IsPickup && !Options.orderReturn && OPEN_ORDER_STATUSES.includes(Order.Status);
 
     }
 

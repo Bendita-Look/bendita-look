@@ -44,7 +44,9 @@ export class PricingServiceImplementation extends BaseServiceImplementation<Orde
 
             const aLines = oLines.value;
             const sToday = StoreCalendar.today();
-            const aPromotions = (await this.PromotionRepository.findActive()).filter((oPromotion) => oPromotion.isValidOn(sToday));
+            const aPromotions = Options.automaticPromotions === false
+                ? []
+                : (await this.PromotionRepository.findActive()).filter((oPromotion) => oPromotion.isValidOn(sToday));
             const aAutomatic = aPromotions
                 .filter((oPromotion) => !oPromotion.IsCoupon)
                 .map((oPromotion) => this.evaluate(oPromotion, aLines))

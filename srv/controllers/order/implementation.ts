@@ -1,4 +1,4 @@
-import { DeliveryInput, Order, OrderInput, OrderItemInput, StoreSaleInput } from '@models/apps/dflc/benditalook/entities';
+import { DeliveryInput, Order, OrderChangeInput, OrderInput, OrderItemInput, StoreSaleInput } from '@models/apps/dflc/benditalook/entities';
 import { OrderService } from '@/services/order';
 import { BaseControllerResponse } from '@/controllers/base';
 import { OrderController } from './protocols';
@@ -48,16 +48,16 @@ export class OrderControllerImplementation extends BaseControllerImplementation<
     }
 
 
-    public async quoteOrderUpdate(OrderId: string, Items: OrderItemInput[]): Promise<BaseControllerResponse> {
+    public async quoteOrderUpdate(OrderId: string, Change: OrderChangeInput): Promise<BaseControllerResponse> {
 
-        return this.respond(await this.Service.quoteOrderUpdate(OrderId, Items), 200);
+        return this.respond(await this.Service.quoteOrderUpdate(OrderId, Change), 200);
 
     }
 
 
-    public async updateOrderItems(OrderId: string, Items: OrderItemInput[]): Promise<BaseControllerResponse> {
+    public async updateOrderItems(OrderId: string, Change: OrderChangeInput): Promise<BaseControllerResponse> {
 
-        return this.respond(await this.Service.updateOrderItems(OrderId, Items), 200);
+        return this.respond(await this.Service.updateOrderItems(OrderId, Change), 200);
 
     }
 

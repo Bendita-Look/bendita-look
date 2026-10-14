@@ -70,6 +70,12 @@ type ActivePromotion {
     Description : String(500);
 }
 
+type OrderChangeInput {
+    Items           : many OrderItemInput;
+    CouponCode      : String(20);
+    ApplyPromotions : Boolean;
+}
+
 type ReturnItemInput {
     OrderItem_ID : UUID;
     Quantity     : Integer;

@@ -30,6 +30,7 @@ export type PriceQuote = {
 
 export type QuoteOptions = {
     couponReserved?: boolean;
+    automaticPromotions?: boolean;
 };
 
 export interface PricingService {

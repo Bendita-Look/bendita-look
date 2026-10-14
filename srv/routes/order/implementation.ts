@@ -28,14 +28,14 @@ export class OrderRouteImplementation extends BaseRouteImplementation<Order> imp
 
     private async quoteOrderUpdate(Request: Request): Promise<unknown> {
 
-        return this.resultOf(Request, await this.Controller.quoteOrderUpdate(Request.data.OrderId, Request.data.Items));
+        return this.resultOf(Request, await this.Controller.quoteOrderUpdate(Request.data.OrderId, Request.data.Change));
 
     }
 
 
     private async updateOrderItems(Request: Request): Promise<unknown> {
 
-        return this.resultOf(Request, await this.Controller.updateOrderItems(Request.data.OrderId, Request.data.Items));
+        return this.resultOf(Request, await this.Controller.updateOrderItems(Request.data.OrderId, Request.data.Change));
 
     }
 

@@ -51,10 +51,10 @@ service BenditaLook {
     action RegisterStoreSale(Sale: entities.StoreSaleInput)                returns entities.SubmitOrderResult;
 
     action QuoteOrderUpdate(OrderId: UUID,
-                            Items: many entities.OrderItemInput)          returns entities.OrderQuote;
+                            Change: entities.OrderChangeInput)            returns entities.OrderQuote;
 
     action UpdateOrderItems(OrderId: UUID,
-                            Items: many entities.OrderItemInput)          returns entities.OrderQuote;
+                            Change: entities.OrderChangeInput)            returns entities.OrderQuote;
 
     action QuoteOrderReturn(OrderId: UUID,
                             Return: entities.ReturnInput)                 returns entities.ReturnQuote;
