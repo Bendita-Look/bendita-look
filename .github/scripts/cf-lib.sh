@@ -4,6 +4,7 @@ POLL_SECONDS=30
 HANA_TIMEOUT_SECONDS=1800
 HEALTH_ATTEMPTS=20
 HEALTH_PATH="/service/Catalog/StoreInfo()"
+HEALTH_TIMEOUT_SECONDS=20
 
 hana_instance() {
     if [[ -n "${HANA_INSTANCE:-}" ]]; then
@@ -68,6 +69,12 @@ app_route() {
     local output
     output="$(cf app "$CF_APP")"
     awk '/^routes:/ && !found { split($2, routes, ","); print routes[1]; found = 1 }' <<< "$output"
+}
+
+is_healthy() {
+    local route
+    route="$(app_route 2> /dev/null)" || return 1
+    [[ -n "$route" ]] && curl -gfsS -m "$HEALTH_TIMEOUT_SECONDS" -o /dev/null "https://${route}${HEALTH_PATH}" 2> /dev/null
 }
 
 check_health() {
