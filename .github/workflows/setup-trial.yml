@@ -73,6 +73,9 @@ jobs:
           username: ${{ secrets.CF_USERNAME }}
           password: ${{ secrets.CF_PASSWORD }}
 
+      - name: Start SAP HANA Cloud
+        run: bash .github/scripts/start-hana.sh
+
       - name: Install MultiApps plugin
         if: inputs.deploy_cap
         run: cf install-plugin multiapps -r CF-Community -f

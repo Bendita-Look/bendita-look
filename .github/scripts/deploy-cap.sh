@@ -5,8 +5,6 @@ source "$(dirname "$0")/cf-lib.sh"
 
 MTA_NAME="BenditaLook"
 
-start_hana
-
 echo "Building the MTA archive"
 npm ci
 npx mbt build --mtar "$MTA_NAME"

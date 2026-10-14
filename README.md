@@ -101,7 +101,7 @@ No trial o HANA Cloud é parado toda noite. Dois workflows cuidam do ambiente:
 | Workflow | Quando roda | O que faz |
 |---|---|---|
 | [Start BTP trial](.github/workflows/start-trial.yml) | 00:13 e 19:13 (Brasília) e sob demanda | Inicia o HANA Cloud, reinicia o `BenditaLook-srv` e confere se o catálogo responde |
-| [Setup BTP trial](.github/workflows/setup-trial.yml) | Manual (conta nova ou novo deploy) | Etapas opcionais: build e deploy do MTA, configuração do SMTP e do `STORE_URL`, e atualização do `webapp/config/runtime-config.json` do UI5 (somente `url`, `clientid` e `xsappname` do XSUAA), com commit que publica o GitHub Pages |
+| [Setup BTP trial](.github/workflows/setup-trial.yml) | Manual (conta nova ou novo deploy) | Inicia o HANA se estiver parado e executa as etapas escolhidas: build e deploy do MTA, configuração do SMTP e do `STORE_URL`, e atualização do `webapp/config/runtime-config.json` do UI5 (somente `url`, `clientid` e `xsappname` do XSUAA), com commit que publica o GitHub Pages |
 
 | Configuração (Settings > Secrets and variables > Actions) | Tipo | Valor |
 |---|---|---|
