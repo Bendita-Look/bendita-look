@@ -46,6 +46,8 @@ Com `CouponCode` a promoção só vale quando a cliente informa o cupom; `MaxUse
 
 Nome, WhatsApp, email de contato, Instagram, emails de notificação, endereço de retirada, link da loja (usado nos emails) e a imagem do banner da vitrine (`BannerImage`, pública em `/service/Catalog/StoreBanners(<ID>)/BannerImage` e incluída no backup como `banner.<extensão>`) ficam na entidade `StoreSettings` (registro único, editado em draft pelo admin). Ela é criada automaticamente no primeiro acesso com os valores das variáveis `STORE_*` e `ADMIN_EMAILS`; depois disso vale o que estiver salvo no admin.
 
+Imagens em entidades com draft (banner e fotos de produto) dependem de `cds.fiori.move_media_data_in_db` no `.cdsrc.json`; sem ela o `draftActivate` pode travar no HANA. Detalhes em [docs/draft-media.md](docs/draft-media.md).
+
 Envios de pedido são limitados a 10 por IP a cada 15 minutos (`srv/constants/order-limits.ts`).
 
 ### Estoque durante a edição do produto

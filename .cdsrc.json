@@ -1,4 +1,7 @@
 {
+    "fiori": {
+        "move_media_data_in_db": true
+    },
     "[development]": {
         "requires": {
             "db": {
