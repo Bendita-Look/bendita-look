@@ -13,7 +13,6 @@ jobs:
   start:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    environment: BTP
 
     env:
       CF_API: ${{ vars.CF_API || 'https://api.cf.us10-001.hana.ondemand.com' }}
@@ -42,7 +41,7 @@ jobs:
           [[ -n "$CF_PASSWORD" ]] || missing+=("secret CF_PASSWORD")
           [[ -n "$CF_ORG" ]] || missing+=("variable CF_ORG")
           if (( ${#missing[@]} )); then
-            echo "::error::Missing repository configuration: ${missing[*]}. Create them in Settings > Environments > BTP (environment secrets / environment variables)."
+            echo "::error::Missing repository configuration: ${missing[*]}. Create them in Settings > Secrets and variables > Actions (Repository secrets / Repository variables)."
             exit 1
           fi
 
