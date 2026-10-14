@@ -98,7 +98,7 @@ Depois atribua a role collection `BenditaLook_Admin` ao seu usuário no cockpit 
 
 No trial o HANA Cloud é parado toda noite. O workflow [Start BTP trial](.github/workflows/start-trial.yml) inicia o HANA, reinicia o `BenditaLook-srv` e confere se o catálogo responde, todo dia às 06:30 (Brasília) e também sob demanda em Actions > Start BTP trial > Run workflow.
 
-| Configuração (Settings > Secrets and variables > Actions) | Tipo | Valor |
+| Configuração (Settings > Environments > `BTP`) | Tipo | Valor |
 |---|---|---|
 | `CF_USERNAME` | Secret | Email do usuário do BTP |
 | `CF_PASSWORD` | Secret | Senha do usuário do BTP |
