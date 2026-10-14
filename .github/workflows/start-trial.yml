@@ -2,8 +2,8 @@ name: Start BTP trial
 
 on:
   schedule:
-    - cron: '1 3 * * *'
-    - cron: '0 22 * * *'
+    - cron: '13 3 * * *'
+    - cron: '13 22 * * *'
   workflow_dispatch:
 
 concurrency:
