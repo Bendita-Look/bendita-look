@@ -1,6 +1,7 @@
 import path from 'path';
 import Decimal from 'decimal.js';
 import { PromotionReward } from '@/constants/promotions';
+import { OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
 import { OrderModel } from '@/models/order';
 import { StoreSettingsModel } from '@/models/store-settings';
 import { StoreSettingsService } from '@/services/store-settings';
@@ -27,6 +28,7 @@ type EmailKind = 'orderCreated' | 'statusChanged' | 'storeSale' | 'newOrder';
 
 type EmailOptions = {
     kind: EmailKind;
+    subjectKey?: string;
     greeting?: string;
     message: string;
     showStatus: boolean;
@@ -69,12 +71,16 @@ export class NotificationServiceImplementation implements NotificationService {
 
         const oSettings = await this.StoreSettingsService.currentSettings();
 
+        const bCompleted = Order.Status === OrderStatus.Completed;
+
         await this.send(Order.CustomerEmail, Order, oSettings, Locale, {
             kind: 'statusChanged',
-            message: Messages.text(`email.statusChanged.message.${Order.Status}`, Locale),
+            subjectKey: `email.statusChanged.subject.${Order.Status}`,
+            message: Messages.text(`email.statusChanged.message.${Order.Status}`, Locale, { store: oSettings.StoreName }),
             showStatus: true,
             showContact: false,
-            primaryUrl: this.trackingUrl(Order, oSettings)
+            primaryUrl: bCompleted ? this.storeUrl(oSettings) : this.trackingUrl(Order, oSettings),
+            primaryLabel: bCompleted ? Messages.text('email.seeMoreItems', Locale) : undefined
         });
 
     }
@@ -129,7 +135,7 @@ export class NotificationServiceImplementation implements NotificationService {
         await this.EmailSender.send({
             fromName: Settings.StoreName,
             to: Recipients,
-            subject: Messages.text(`email.${Options.kind}.subject`, Locale, {
+            subject: Messages.text(Options.subjectKey ?? `email.${Options.kind}.subject`, Locale, {
                 store: Settings.StoreName,
                 number: Order.Number,
                 status: Messages.text(`orderStatus.${Order.Status}`, Locale)
@@ -220,7 +226,7 @@ export class NotificationServiceImplementation implements NotificationService {
                 gift: Promotion.RewardType === PromotionReward.Gift ? Promotion.GiftDescription : undefined,
                 discount: Promotion.DiscountAmount.greaterThan(0) ? currency(Promotion.DiscountAmount) : undefined
             })),
-            pickup: Order.IsPickup && Options.kind !== 'storeSale' ? { address: Settings.PickupAddress } : undefined,
+            pickup: Order.IsPickup && OPEN_ORDER_STATUSES.includes(Order.Status) ? { address: Settings.PickupAddress } : undefined,
             delivery: Order.DeliveryType ? {
                 type: Messages.text(`deliveryType.${Order.DeliveryType}`, Locale),
                 courierName: Order.CourierName,
@@ -258,9 +264,16 @@ export class NotificationServiceImplementation implements NotificationService {
     }
 
 
+    private storeUrl(Settings: StoreSettingsModel): string | undefined {
+
+        return Settings.StoreUrl || process.env.STORE_URL;
+
+    }
+
+
     private trackingUrl(Order: OrderModel, Settings: StoreSettingsModel): string | undefined {
 
-        const sStoreUrl = Settings.StoreUrl || process.env.STORE_URL;
+        const sStoreUrl = this.storeUrl(Settings);
 
         return sStoreUrl ? `${sStoreUrl}#/order/${Order.Number}/${Order.AccessCode}` : undefined;
 
@@ -269,7 +282,7 @@ export class NotificationServiceImplementation implements NotificationService {
 
     private adminUrl(Settings: StoreSettingsModel): string | undefined {
 
-        const sStoreUrl = Settings.StoreUrl || process.env.STORE_URL;
+        const sStoreUrl = this.storeUrl(Settings);
 
         return sStoreUrl ? `${sStoreUrl}#/admin` : undefined;
 
