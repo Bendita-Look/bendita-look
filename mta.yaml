@@ -25,7 +25,7 @@ modules:
       readiness-health-check-http-endpoint: /health
     properties:
       STORE_NAME: Bendita Look
-      STORE_URL: https://davicastr.github.io/SAP-UI5-BenditaLook/index.html
+      STORE_URL: https://benditalook.github.io/Store/index.html
       STORE_WHATSAPP: "5585996304756"
     build-parameters:
       builder: npm-ci
