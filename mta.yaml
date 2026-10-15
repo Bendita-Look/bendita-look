@@ -102,6 +102,7 @@ resources:
             - https://*.hana.ondemand.com/**
             - http://localhost:*/**
             - https://davicastr.github.io/**
+            - https://benditalook.github.io/**
           credential-types:
             - binding-secret
             - x509

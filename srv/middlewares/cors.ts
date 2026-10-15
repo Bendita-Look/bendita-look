@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
-const DEFAULT_ORIGINS = ['https://davicastr.github.io'];
+const DEFAULT_ORIGINS = ['https://davicastr.github.io', 'https://benditalook.github.io'];
 
 function isAllowedOrigin(origin: string): boolean {
     const configuredOrigins = (process.env.CORS_ORIGINS || '').split(',').map((value) => value.trim());
