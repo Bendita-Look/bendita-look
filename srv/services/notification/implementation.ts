@@ -180,6 +180,7 @@ export class NotificationServiceImplementation implements NotificationService {
         await this.EmailSender.send({
             fromName: Settings.StoreName,
             to: Recipients,
+            replyTo: Settings.ContactEmail,
             subject: Messages.text(Options.subjectKey ?? `email.${Options.kind}.subject`, Locale, {
                 store: Settings.StoreName,
                 number: Order.Number,

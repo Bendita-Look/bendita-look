@@ -1,5 +1,6 @@
 import cds from '@sap/cds';
 import nodemailer, { Transporter } from 'nodemailer';
+import { HtmlText } from './HtmlText';
 
 export type EmailAttachment = {
     filename: string;
@@ -13,6 +14,7 @@ export type EmailMessage = {
     fromName: string;
     to: string | string[];
     cc?: string[];
+    replyTo?: string;
     subject: string;
     html: string;
     attachments?: EmailAttachment[];
@@ -44,8 +46,10 @@ export class EmailSender {
             from: `"${Message.fromName}" <${process.env.SMTP_USER}>`,
             to: Message.to,
             cc: Message.cc?.length ? Message.cc : undefined,
+            replyTo: Message.replyTo || undefined,
             subject: Message.subject,
             html: Message.html,
+            text: HtmlText.from(Message.html),
             attachments: Message.attachments
         });
 
