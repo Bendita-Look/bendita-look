@@ -1,11 +1,18 @@
 import type { NextFunction, Request, Response } from 'express';
-import { AllowedOrigins } from '../infrastructure/AllowedOrigins';
+
+const DEFAULT_ORIGINS = ['https://davicastr.github.io', 'https://benditalook.github.io'];
+
+function isAllowedOrigin(origin: string): boolean {
+    const configuredOrigins = (process.env.CORS_ORIGINS || '').split(',').map((value) => value.trim());
+
+    return DEFAULT_ORIGINS.includes(origin) || configuredOrigins.includes(origin);
+}
 
 const ALLOWED_METHODS =
     'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS';
 
 const ALLOWED_HEADERS =
-    'Content-Type, Authorization, x-csrf-token, x-store-url, Prefer, If-Match, If-None-Match, sap-context-token, sap-context-token-accept, sap-cancel-on-close, sap-correlationid, x-sap-security-session, mime-version, odata-version, odata-maxversion';
+    'Content-Type, Authorization, x-csrf-token, Prefer, If-Match, If-None-Match, sap-context-token, sap-context-token-accept, sap-cancel-on-close, sap-correlationid, x-sap-security-session, mime-version, odata-version, odata-maxversion';
 
 const EXPOSE_HEADERS =
     'x-csrf-token, OData-Version, odata-version, SAP-Message, sap-message, ETag, Location';
@@ -13,7 +20,7 @@ const EXPOSE_HEADERS =
 export function corsMiddleware(req: Request, res: Response, next: NextFunction): void {
     const origin = req.headers.origin;
 
-    if (origin && AllowedOrigins.includes(origin)) {
+    if (origin && isAllowedOrigin(origin)) {
         res.set('Access-Control-Allow-Origin', origin);
         res.set('Access-Control-Allow-Methods', ALLOWED_METHODS);
         res.set('Access-Control-Allow-Headers', ALLOWED_HEADERS);

@@ -1,8 +1,5 @@
 import cds, { entity, Request } from '@sap/cds';
 import { ADMIN_SERVICE, ENTITIES_NAMESPACE } from '@/constants/entities';
-import { AllowedOrigins } from './AllowedOrigins';
-
-const STORE_URL_HEADER = 'x-store-url';
 
 export class ServiceLocator {
 
@@ -34,15 +31,6 @@ export class ServiceLocator {
         const forwardedFor = httpRequest?.headers?.['x-forwarded-for'] as string | undefined;
 
         return forwardedFor?.split(',').pop()?.trim() || httpRequest?.ip || 'unknown';
-
-    }
-
-
-    public static getStoreUrl(): string | undefined {
-
-        const sHeader = (cds.context as any)?.http?.req?.headers?.[STORE_URL_HEADER] as string | undefined;
-
-        return AllowedOrigins.storeUrl(sHeader?.trim());
 
     }
 
