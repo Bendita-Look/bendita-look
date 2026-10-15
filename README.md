@@ -32,6 +32,12 @@ O login por senha não suporta verificação em duas etapas; com 2FA ativo use "
 7. No admin, o botão WhatsApp do pedido abre uma mensagem pronta para cada status (atendimento com link de acompanhamento, forma de pagamento e frete; saída para entrega com os dados do envio; agradecimento na conclusão; cancelamento), editável antes do envio e com a assinatura configurada em `StoreSettings.WhatsappSignature`. O link vem de `OrderTrackingUrl`, já que o código de acesso não é exposto no serviço admin.
 8. Pedidos com entrega informam, no carrinho, no acompanhamento e nos emails enquanto estão em aberto, que o frete não está incluído no total e é calculado pela loja.
 
+## Custo, estoque e lucro
+
+- `Products.CostPrice` guarda o custo por peça (não é exposto no serviço `Catalog`). Cada venda grava o custo do momento em `OrderItems.UnitCost`, e as peças de devolução/troca em `OrderReturnItems.UnitCost`, para que mudanças futuras de custo não alterem o lucro de vendas passadas.
+- `RegisterStockEntry` registra uma entrada de estoque (`StockEntries`/`StockEntryItems`): soma o estoque das variações e recalcula o custo do produto pela média ponderada entre o estoque existente e o que entrou. Se o produto estiver com rascunho aberto, o custo do rascunho também é atualizado.
+- `SalesReport` traz custo das peças vendidas, lucro e margem (por mês, produto e categoria) e o total de compras (entradas de estoque). Peças devolvidas que voltam ao estoque estornam o custo; as que não voltam (defeito) mantêm o custo como perda. Vendas sem custo cadastrado são contadas em `ItemsWithoutCost`.
+
 ## Devoluções e trocas
 
 Pedidos `COMPLETED` aceitam devoluções parciais (`QuoteOrderReturn` / `RegisterOrderReturn`) enquanto houver peças a devolver: cada item do pedido (`OrderItem_ID`) e cada peça recebida numa troca (`Replacement_ID`) pode ser devolvido até a quantidade recebida, em quantas rodadas forem necessárias:
