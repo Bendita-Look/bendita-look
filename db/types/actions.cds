@@ -76,6 +76,17 @@ type OrderChangeInput {
     ApplyPromotions : Boolean;
 }
 
+type StockEntryItemInput {
+    Variant_ID : UUID;
+    Quantity   : Integer;
+    UnitCost   : Decimal(15, 2);
+}
+
+type StockEntryInput {
+    Note  : String(255);
+    Items : many StockEntryItemInput;
+}
+
 type ReturnItemInput {
     OrderItem_ID   : UUID;
     Replacement_ID : UUID;
@@ -170,14 +181,26 @@ type MonthlySales {
     Month   : Integer;
     Orders  : Integer;
     Items   : Integer;
-    Revenue : Decimal(15, 2);
-    Refunds : Decimal(15, 2);
+    Revenue   : Decimal(15, 2);
+    Refunds   : Decimal(15, 2);
+    Cost      : Decimal(15, 2);
+    Profit    : Decimal(15, 2);
+    Purchases : Decimal(15, 2);
 }
 
 type ProductSales {
     ProductName : String(120);
     Quantity    : Integer;
     Revenue     : Decimal(15, 2);
+    Cost        : Decimal(15, 2);
+    Profit      : Decimal(15, 2);
+}
+
+type CategorySales {
+    CategoryName : String(60);
+    Quantity     : Integer;
+    Revenue      : Decimal(15, 2);
+    Profit       : Decimal(15, 2);
 }
 
 type SalesReport {
@@ -195,7 +218,13 @@ type SalesReport {
     ReturnedItems   : Integer;
     RefundedAmount  : Decimal(15, 2);
     ExchangedAmount : Decimal(15, 2);
+    Cost            : Decimal(15, 2);
+    Profit          : Decimal(15, 2);
+    Margin          : Decimal(7, 2);
+    Purchases       : Decimal(15, 2);
+    ItemsWithoutCost : Integer;
     Months          : many MonthlySales;
     TopProducts     : many ProductSales;
     TopReturned     : many ProductSales;
+    TopCategories   : many CategorySales;
 }

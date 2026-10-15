@@ -7,6 +7,7 @@ export type ProductProperties = AuditProperties & {
     Name: string;
     Description?: string;
     Price: Decimal;
+    CostPrice: Decimal;
     Active: boolean;
     Featured: boolean;
     CategoryId: string;
@@ -27,6 +28,7 @@ export class ProductModel extends BaseModel {
             Name: Product.Name as string,
             Description: Product.Description ?? undefined,
             Price: this.retrieveDecimal(Product.Price),
+            CostPrice: this.retrieveDecimal(Product.CostPrice),
             Active: Product.Active !== false,
             Featured: Product.Featured === true,
             CategoryId: Product.Category_ID as string,
@@ -41,6 +43,8 @@ export class ProductModel extends BaseModel {
 
     public get Price() { return this.properties.Price; }
 
+    public get CostPrice() { return this.properties.CostPrice; }
+
     public get Active() { return this.properties.Active; }
 
     public toEntityObject(): Product {
@@ -50,6 +54,7 @@ export class ProductModel extends BaseModel {
             Name: this.properties.Name,
             Description: this.properties.Description,
             Price: this.properties.Price.toNumber(),
+            CostPrice: this.properties.CostPrice.toNumber(),
             Active: this.properties.Active,
             Featured: this.properties.Featured,
             Category_ID: this.properties.CategoryId,

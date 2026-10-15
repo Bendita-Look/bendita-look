@@ -33,6 +33,12 @@ service BenditaLook {
     @readonly
     entity OrderReturnItems as projection on entities.OrderReturnItems;
 
+    @readonly
+    entity StockEntries    as projection on entities.StockEntries;
+
+    @readonly
+    entity StockEntryItems as projection on entities.StockEntryItems;
+
     @odata.draft.enabled
     entity Promotions      as projection on entities.Promotions;
 
@@ -61,6 +67,8 @@ service BenditaLook {
 
     action RegisterOrderReturn(OrderId: UUID,
                                Return: entities.ReturnInput)              returns entities.ReturnQuote;
+
+    action RegisterStockEntry(Entry: entities.StockEntryInput)            returns entities.ActionResult;
 
     action ExportBackup()                                                 returns entities.ActionResult;
 

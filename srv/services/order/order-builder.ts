@@ -38,7 +38,8 @@ export class OrderBuilder {
             Size: oLine.variant.Size,
             Quantity: oLine.quantity,
             UnitPrice: oLine.variant.Price,
-            TotalPrice: oLine.total
+            TotalPrice: oLine.total,
+            UnitCost: oLine.variant.CostPrice
         }));
 
     }

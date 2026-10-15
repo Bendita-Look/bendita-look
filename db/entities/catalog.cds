@@ -17,6 +17,7 @@ entity Products : cuid, managed {
     Name        : String(120)              @mandatory;
     Description : String(1000);
     Price       : Decimal(15, 2)           @mandatory;
+    CostPrice   : Decimal(15, 2) default 0;
     Active      : Boolean default true;
     Featured    : Boolean default false;
     Category    : Association to Categories @mandatory;

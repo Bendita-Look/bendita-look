@@ -24,6 +24,7 @@ export class ProductVariantRepositoryImplementation extends BaseRepositoryImplem
                     'Product.Category_ID as CategoryId',
                     'Product.Name as ProductName',
                     'Product.Price as Price',
+                    'Product.CostPrice as CostPrice',
                     'Product.Active as ProductActive',
                     'Color.Name as ColorName'
                 )
@@ -55,6 +56,24 @@ export class ProductVariantRepositoryImplementation extends BaseRepositoryImplem
                 .set({ Stock: { '+=': Quantity } })
                 .where({ ID: Id })
         );
+
+    }
+
+
+    public async sumStockByProducts(ProductIds: string[]): Promise<Map<string, number>> {
+
+        if (!ProductIds.length) {
+            return new Map();
+        }
+
+        const aRows = await cds.run(
+            SELECT.from(this.getEntity())
+                .columns('Product_ID as ProductId', 'sum(Stock) as Stock')
+                .where({ Product_ID: { in: ProductIds } })
+                .groupBy('Product_ID')
+        );
+
+        return new Map(aRows.map((oRow: { ProductId: string; Stock: number | null }) => [oRow.ProductId, Math.max(Number(oRow.Stock ?? 0), 0)]));
 
     }
 

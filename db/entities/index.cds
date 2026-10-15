@@ -5,3 +5,4 @@ using from './orders';
 using from './backups';
 using from './settings';
 using from './promotions';
+using from './stock';

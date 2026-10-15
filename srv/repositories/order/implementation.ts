@@ -34,7 +34,9 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
         }
 
         const aItems = await cds.run(
-            SELECT.from(ServiceLocator.getEntity('OrderItems')).where({ Order_ID: { in: aOrders.map((oOrder: { ID: string }) => oOrder.ID) } })
+            SELECT.from(ServiceLocator.getEntity('OrderItems'))
+                .columns('*', 'Product.Category.Name as CategoryName')
+                .where({ Order_ID: { in: aOrders.map((oOrder: { ID: string }) => oOrder.ID) } })
         );
 
         return this.mapResult(aOrders.map((oOrder: { ID: string }) => ({

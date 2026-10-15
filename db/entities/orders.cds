@@ -61,6 +61,7 @@ entity OrderItems : cuid {
     Quantity    : Integer;
     UnitPrice   : Decimal(15, 2);
     TotalPrice  : Decimal(15, 2);
+    UnitCost    : Decimal(15, 2);
 }
 
 entity OrderReturns : cuid, managed {
@@ -87,6 +88,7 @@ entity OrderReturnItems : cuid {
     Quantity    : Integer;
     UnitPrice   : Decimal(15, 2);
     TotalPrice  : Decimal(15, 2);
+    UnitCost    : Decimal(15, 2);
     Restock     : Boolean default false;
 }
 

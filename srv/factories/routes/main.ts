@@ -4,6 +4,7 @@ import { oCategoryRouteFactory } from './category';
 import { oProductRouteFactory } from './product';
 import { oOrderRouteFactory } from './order';
 import { oOrderReturnRouteFactory } from './order-return';
+import { oStockEntryRouteFactory } from './stock-entry';
 import { oBackupRouteFactory } from './backup';
 import { oReportRouteFactory } from './report';
 import { oStoreSettingsRouteFactory } from './store-settings';
@@ -16,6 +17,7 @@ const makeMainRoute = (): MainRoute => {
         oProductRouteFactory,
         oOrderRouteFactory,
         oOrderReturnRouteFactory,
+        oStockEntryRouteFactory,
         oBackupRouteFactory,
         oReportRouteFactory,
         oStoreSettingsRouteFactory,

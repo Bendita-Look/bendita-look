@@ -8,7 +8,10 @@ export class OrderReturnRepositoryImplementation extends BaseRepositoryImplement
     public async findWithItemsByPeriod(Start: Date, End: Date): Promise<OrderReturnModel[]> {
 
         const aReturns = await cds.run(
-            SELECT.from(this.getEntity(), (oReturn: any) => { oReturn('*'); oReturn.Items((oItem: any) => oItem('*')); })
+            SELECT.from(this.getEntity(), (oReturn: any) => {
+                oReturn('*');
+                oReturn.Items((oItem: any) => { oItem('*'); oItem.Product((oProduct: any) => oProduct.Category((oCategory: any) => oCategory.Name)); });
+            })
                 .where`createdAt >= ${Start.toISOString()} and createdAt < ${End.toISOString()}`
         );
 

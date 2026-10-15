@@ -14,6 +14,8 @@ export type OrderItemProperties = {
     Quantity: number;
     UnitPrice: Decimal;
     TotalPrice: Decimal;
+    UnitCost?: Decimal;
+    CategoryName?: string;
 };
 
 export class OrderItemModel extends BaseModel {
@@ -37,7 +39,9 @@ export class OrderItemModel extends BaseModel {
             Size: Item.Size as string,
             Quantity: Item.Quantity ?? 0,
             UnitPrice: this.retrieveDecimal(Item.UnitPrice),
-            TotalPrice: this.retrieveDecimal(Item.TotalPrice)
+            TotalPrice: this.retrieveDecimal(Item.TotalPrice),
+            UnitCost: Item.UnitCost === null || Item.UnitCost === undefined ? undefined : this.retrieveDecimal(Item.UnitCost),
+            CategoryName: (Item as OrderItem & { CategoryName?: string | null }).CategoryName ?? undefined
         }));
 
     }
@@ -64,6 +68,10 @@ export class OrderItemModel extends BaseModel {
 
     public get TotalPrice() { return this.properties.TotalPrice; }
 
+    public get UnitCost() { return this.properties.UnitCost; }
+
+    public get CategoryName() { return this.properties.CategoryName; }
+
     public toEntityObject(): OrderItem {
 
         return this.cleanEntity({
@@ -77,7 +85,8 @@ export class OrderItemModel extends BaseModel {
             Size: this.properties.Size,
             Quantity: this.properties.Quantity,
             UnitPrice: this.properties.UnitPrice.toNumber(),
-            TotalPrice: this.properties.TotalPrice.toNumber()
+            TotalPrice: this.properties.TotalPrice.toNumber(),
+            UnitCost: this.properties.UnitCost?.toNumber()
         });
 
     }

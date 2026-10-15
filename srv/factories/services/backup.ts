@@ -13,6 +13,8 @@ import { oPromotionRepositoryFactory } from '../repositories/promotion';
 import { oOrderPromotionRepositoryFactory } from '../repositories/order-promotion';
 import { oOrderReturnRepositoryFactory } from '../repositories/order-return';
 import { oOrderReturnItemRepositoryFactory } from '../repositories/order-return-item';
+import { oStockEntryRepositoryFactory } from '../repositories/stock-entry';
+import { oStockEntryItemRepositoryFactory } from '../repositories/stock-entry-item';
 
 const makeBackupService = (): BackupService => {
 
@@ -32,6 +34,8 @@ const makeBackupService = (): BackupService => {
             { name: 'OrderPromotions', repository: oOrderPromotionRepositoryFactory },
             { name: 'OrderReturns', repository: oOrderReturnRepositoryFactory },
             { name: 'OrderReturnItems', repository: oOrderReturnItemRepositoryFactory },
+            { name: 'StockEntries', repository: oStockEntryRepositoryFactory },
+            { name: 'StockEntryItems', repository: oStockEntryItemRepositoryFactory },
             { name: 'StoreSettings', repository: oStoreSettingsRepositoryFactory, overwriteExisting: true }
         ]
     );

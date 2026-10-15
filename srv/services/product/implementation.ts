@@ -64,6 +64,10 @@ export class ProductServiceImplementation extends BaseServiceImplementation<Prod
             return left(new ValidationError('error.invalidPrice'));
         }
 
+        if ('CostPrice' in Product && Product.CostPrice !== null && !(Number(Product.CostPrice) >= 0)) {
+            return left(new ValidationError('error.invalidCostPrice'));
+        }
+
         const aColors = Product.Colors ?? [];
         const aVariants = Product.Variants ?? [];
 

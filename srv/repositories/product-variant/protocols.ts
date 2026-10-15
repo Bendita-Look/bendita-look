@@ -6,5 +6,6 @@ export interface ProductVariantRepository extends BaseRepository<ProductVariantM
     findOrderableByIds(Ids: string[]): Promise<OrderableVariantModel[]>;
     decreaseStock(Id: string, Quantity: number): Promise<boolean>;
     increaseStock(Id: string, Quantity: number): Promise<void>;
+    sumStockByProducts(ProductIds: string[]): Promise<Map<string, number>>;
     snapshotDraftStock(ProductId: string): Promise<void>;
 }

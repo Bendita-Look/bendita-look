@@ -243,6 +243,7 @@ export class OrderReturnServiceImplementation extends BaseServiceImplementation<
             Quantity: oLine.quantity,
             UnitPrice: oLine.item.UnitPrice,
             TotalPrice: oLine.refund,
+            UnitCost: oLine.item.UnitCost,
             Restock: oLine.restock
         }));
 
@@ -259,6 +260,7 @@ export class OrderReturnServiceImplementation extends BaseServiceImplementation<
             Quantity: oLine.quantity,
             UnitPrice: oLine.variant.Price,
             TotalPrice: oLine.total,
+            UnitCost: oLine.variant.CostPrice,
             Restock: false
         }));
 

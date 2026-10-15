@@ -18,6 +18,8 @@ export type OrderReturnItemProperties = {
     Quantity: number;
     UnitPrice: Decimal;
     TotalPrice: Decimal;
+    UnitCost?: Decimal;
+    CategoryName?: string;
     Restock: boolean;
 };
 
@@ -46,6 +48,8 @@ export class OrderReturnItemModel extends BaseModel {
             Quantity: Item.Quantity ?? 0,
             UnitPrice: this.retrieveDecimal(Item.UnitPrice),
             TotalPrice: this.retrieveDecimal(Item.TotalPrice),
+            UnitCost: Item.UnitCost === null || Item.UnitCost === undefined ? undefined : this.retrieveDecimal(Item.UnitCost),
+            CategoryName: (Item as OrderReturnItem & { Product?: { Category?: { Name?: string | null } | null } | null }).Product?.Category?.Name ?? undefined,
             Restock: Boolean(Item.Restock)
         }));
 
@@ -79,6 +83,10 @@ export class OrderReturnItemModel extends BaseModel {
 
     public get TotalPrice() { return this.properties.TotalPrice; }
 
+    public get UnitCost() { return this.properties.UnitCost; }
+
+    public get CategoryName() { return this.properties.CategoryName; }
+
     public get Restock() { return this.properties.Restock; }
 
     public toEntityObject(): OrderReturnItem {
@@ -98,6 +106,7 @@ export class OrderReturnItemModel extends BaseModel {
             Quantity: this.properties.Quantity,
             UnitPrice: this.properties.UnitPrice.toNumber(),
             TotalPrice: this.properties.TotalPrice.toNumber(),
+            UnitCost: this.properties.UnitCost?.toNumber(),
             Restock: this.properties.Restock
         });
 

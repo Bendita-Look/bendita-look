@@ -11,6 +11,7 @@ export type OrderableVariantProperties = {
     ProductName: string;
     ProductActive: boolean;
     Price: Decimal;
+    CostPrice: Decimal;
     ColorName?: string;
 };
 
@@ -23,6 +24,7 @@ type OrderableVariantRow = {
     CategoryId: string | null;
     ProductName: string;
     Price: unknown;
+    CostPrice: unknown;
     ProductActive: boolean | null;
     ColorName: string | null;
 };
@@ -47,6 +49,7 @@ export class OrderableVariantModel extends BaseModel {
             ProductName: Row.ProductName,
             ProductActive: Boolean(Row.ProductName) && Row.ProductActive !== false,
             Price: this.retrieveDecimal(Row.Price),
+            CostPrice: this.retrieveDecimal(Row.CostPrice),
             ColorName: Row.ColorName ?? undefined
         }));
 
@@ -69,6 +72,8 @@ export class OrderableVariantModel extends BaseModel {
     public get ProductActive() { return this.properties.ProductActive; }
 
     public get Price() { return this.properties.Price; }
+
+    public get CostPrice() { return this.properties.CostPrice; }
 
     public get ColorName() { return this.properties.ColorName; }
 
