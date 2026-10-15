@@ -77,8 +77,9 @@ type OrderChangeInput {
 }
 
 type ReturnItemInput {
-    OrderItem_ID : UUID;
-    Quantity     : Integer;
+    OrderItem_ID   : UUID;
+    Replacement_ID : UUID;
+    Quantity       : Integer;
     Restock      : Boolean;
 }
 

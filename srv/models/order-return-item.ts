@@ -8,6 +8,7 @@ export type OrderReturnItemProperties = {
     ReturnId: string;
     Kind: ReturnItemKind;
     OrderItemId?: string;
+    ReplacementId?: string;
     VariantId: string;
     ProductId?: string;
     ImageId?: string;
@@ -35,6 +36,7 @@ export class OrderReturnItemModel extends BaseModel {
             ReturnId: Item.Return_ID as string,
             Kind: Item.Kind as ReturnItemKind,
             OrderItemId: Item.OrderItem_ID ?? undefined,
+            ReplacementId: Item.Replacement_ID ?? undefined,
             VariantId: Item.Variant_ID as string,
             ProductId: Item.Product_ID ?? undefined,
             ImageId: Item.ImageId ?? undefined,
@@ -56,6 +58,10 @@ export class OrderReturnItemModel extends BaseModel {
     public get IsReturned() { return this.properties.Kind === ReturnItemKind.Returned; }
 
     public get OrderItemId() { return this.properties.OrderItemId; }
+
+    public get ReplacementId() { return this.properties.ReplacementId; }
+
+    public get ProductId() { return this.properties.ProductId; }
 
     public get VariantId() { return this.properties.VariantId; }
 
@@ -82,6 +88,7 @@ export class OrderReturnItemModel extends BaseModel {
             Return_ID: this.properties.ReturnId,
             Kind: this.properties.Kind,
             OrderItem_ID: this.properties.OrderItemId,
+            Replacement_ID: this.properties.ReplacementId,
             Variant_ID: this.properties.VariantId,
             Product_ID: this.properties.ProductId,
             ImageId: this.properties.ImageId,

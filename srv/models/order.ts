@@ -5,6 +5,7 @@ import { AuditProperties, BaseModel } from './base';
 import { OrderItemModel } from './order-item';
 import { OrderPromotionModel } from './order-promotion';
 import { OrderReturnModel } from './order-return';
+import { OrderReturnItemModel } from './order-return-item';
 
 export type OrderDelivery = {
     DeliveryType: DeliveryType;
@@ -143,7 +144,7 @@ export class OrderModel extends BaseModel {
 
     public get ExchangedAmount() { return this.properties.ExchangedAmount ?? new Decimal(0); }
 
-    public get RefundableAmount() { return Decimal.max(this.TotalAmount.minus(this.RefundedAmount), 0); }
+    public get RefundableAmount() { return Decimal.max(this.TotalAmount.plus(this.ExchangedAmount).minus(this.RefundedAmount), 0); }
 
     public get Items() { return this.properties.Items; }
 
@@ -151,11 +152,25 @@ export class OrderModel extends BaseModel {
 
     public get Returns() { return this.properties.Returns ?? []; }
 
+    public get Replacements() { return this.Returns.flatMap((Return) => Return.Replacements); }
+
     public returnedQuantity(OrderItemId: string): number {
+
+        return this.sumReturned((Item) => Item.OrderItemId === OrderItemId);
+
+    }
+
+    public returnedReplacementQuantity(ReplacementId: string): number {
+
+        return this.sumReturned((Item) => Item.ReplacementId === ReplacementId);
+
+    }
+
+    private sumReturned(Matches: (Item: OrderReturnItemModel) => boolean): number {
 
         return this.Returns
             .flatMap((Return) => Return.ReturnedItems)
-            .filter((Item) => Item.OrderItemId === OrderItemId)
+            .filter(Matches)
             .reduce((iTotal, Item) => iTotal + Item.Quantity, 0);
 
     }

@@ -77,6 +77,7 @@ entity OrderReturnItems : cuid {
     Return      : Association to OrderReturns;
     Kind        : ReturnItemKind;
     OrderItem   : Association to OrderItems;
+    Replacement : Association to OrderReturnItems;
     Variant     : Association to entities.ProductVariants;
     Product     : Association to entities.Products;
     ImageId     : UUID;

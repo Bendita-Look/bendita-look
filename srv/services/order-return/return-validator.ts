@@ -6,7 +6,8 @@ import { OrderInputValidator, RequestedItem } from '@/services/order/input-valid
 const REASON_MAX_LENGTH = 255;
 
 export type RequestedReturnItem = {
-    OrderItemId: string;
+    OrderItemId?: string;
+    ReplacementId?: string;
     Quantity: number;
     Restock: boolean;
 };
@@ -57,13 +58,20 @@ export class OrderReturnValidator {
         for (const oItem of Items) {
 
             const iQuantity = Number(oItem.Quantity);
+            const sKey = oItem.OrderItem_ID || oItem.Replacement_ID;
+            const bSingleSource = Boolean(oItem.OrderItem_ID) !== Boolean(oItem.Replacement_ID);
 
-            if (!oItem.OrderItem_ID || oSeen.has(oItem.OrderItem_ID) || !Number.isInteger(iQuantity) || iQuantity < 1) {
+            if (!sKey || !bSingleSource || oSeen.has(sKey) || !Number.isInteger(iQuantity) || iQuantity < 1) {
                 return left(new ValidationError('error.invalidReturnItem'));
             }
 
-            oSeen.add(oItem.OrderItem_ID);
-            aItems.push({ OrderItemId: oItem.OrderItem_ID, Quantity: iQuantity, Restock: oItem.Restock !== false });
+            oSeen.add(sKey);
+            aItems.push({
+                OrderItemId: oItem.OrderItem_ID ?? undefined,
+                ReplacementId: oItem.Replacement_ID ?? undefined,
+                Quantity: iQuantity,
+                Restock: oItem.Restock !== false
+            });
 
         }
 

@@ -18,8 +18,12 @@ import { OrderReturnValidator, RequestedReturnItem, ValidReturnInput } from './r
 import { OrderReturnService } from './protocols';
 import { BaseServiceImplementation } from '../base/implementation';
 
+type ReturnableItem = OrderItemModel | OrderReturnItemModel;
+
 type ReturnedLine = {
-    item: OrderItemModel;
+    item: ReturnableItem;
+    orderItemId?: string;
+    replacementId?: string;
     quantity: number;
     restock: boolean;
     refund: Decimal;
@@ -148,13 +152,17 @@ export class OrderReturnServiceImplementation extends BaseServiceImplementation<
 
         for (const oRequested of Items) {
 
-            const oItem = Order.Items.find((oOrderItem) => oOrderItem.Id === oRequested.OrderItemId);
+            const oItem: ReturnableItem | undefined = oRequested.OrderItemId
+                ? Order.Items.find((oOrderItem) => oOrderItem.Id === oRequested.OrderItemId)
+                : Order.Replacements.find((oReplacement) => oReplacement.Id === oRequested.ReplacementId);
 
             if (!oItem) {
                 return left(new ValidationError('error.invalidReturnItem'));
             }
 
-            const iAvailable = oItem.Quantity - Order.returnedQuantity(oItem.Id);
+            const iAvailable = oItem.Quantity - (oRequested.OrderItemId
+                ? Order.returnedQuantity(oItem.Id)
+                : Order.returnedReplacementQuantity(oItem.Id));
 
             if (oRequested.Quantity > iAvailable) {
                 return left(new ConflictError('error.returnQuantityExceeded', {
@@ -165,9 +173,13 @@ export class OrderReturnServiceImplementation extends BaseServiceImplementation<
 
             aLines.push({
                 item: oItem,
+                orderItemId: oRequested.OrderItemId,
+                replacementId: oRequested.ReplacementId,
                 quantity: oRequested.Quantity,
                 restock: oRequested.Restock,
-                refund: Order.refundFor(oItem, oRequested.Quantity)
+                refund: oItem instanceof OrderItemModel
+                    ? Order.refundFor(oItem, oRequested.Quantity)
+                    : oItem.TotalPrice.dividedBy(oItem.Quantity).times(oRequested.Quantity).toDecimalPlaces(2)
             });
 
         }
@@ -220,7 +232,8 @@ export class OrderReturnServiceImplementation extends BaseServiceImplementation<
             Id: this.generateUUID(),
             ReturnId: sReturnId,
             Kind: ReturnItemKind.Returned,
-            OrderItemId: oLine.item.Id,
+            OrderItemId: oLine.orderItemId,
+            ReplacementId: oLine.replacementId,
             VariantId: oLine.item.VariantId,
             ProductId: oLine.item.ProductId,
             ImageId: oLine.item.ImageId,

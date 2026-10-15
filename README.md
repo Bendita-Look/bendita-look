@@ -33,9 +33,9 @@ O login por senha não suporta verificação em duas etapas; com 2FA ativo use "
 
 ## Devoluções e trocas
 
-Pedidos `COMPLETED` aceitam devoluções parciais (`QuoteOrderReturn` / `RegisterOrderReturn`), uma ou várias vezes, até a quantidade comprada de cada item:
+Pedidos `COMPLETED` aceitam devoluções parciais (`QuoteOrderReturn` / `RegisterOrderReturn`) enquanto houver peças a devolver: cada item do pedido (`OrderItem_ID`) e cada peça recebida numa troca (`Replacement_ID`) pode ser devolvido até a quantidade recebida, em quantas rodadas forem necessárias:
 
-- o valor devolvido de cada peça é proporcional ao desconto do pedido (preço pago na linha × total / subtotal), limitado ao que ainda não foi devolvido;
+- o valor devolvido de uma peça do pedido é proporcional ao desconto do pedido (preço pago na linha × total / subtotal); o de uma peça de troca é o preço cobrado na troca; o total devolvido nunca passa do pago (total do pedido + trocas − já devolvido);
 - para cada peça o admin escolhe se ela volta ao estoque (desmarca quando veio com defeito);
 - peças de troca são opcionais, saem do estoque pelo preço atual (sem promoções) e o saldo indica se a cliente paga a diferença ou recebe de volta;
 - o registro fica em `OrderReturns`/`OrderReturnItems`, o pedido acumula `RefundedAmount` e `ExchangedAmount`, a cliente recebe email e vê o histórico no acompanhamento;
