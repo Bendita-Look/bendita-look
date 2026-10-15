@@ -92,7 +92,7 @@ export class NotificationServiceImplementation implements NotificationService {
             message: Messages.text(`email.statusChanged.message.${sStatusKey}`, Locale, { store: oSettings.StoreName }),
             showStatus: true,
             showContact: false,
-            primaryUrl: bCompleted ? this.storeUrl(oSettings) : this.trackingUrl(Order, oSettings),
+            primaryUrl: bCompleted ? this.storeUrl(Order, oSettings) : this.trackingUrl(Order, oSettings),
             primaryLabel: bCompleted ? Messages.text('email.seeMoreItems', Locale) : undefined
         });
 
@@ -108,7 +108,7 @@ export class NotificationServiceImplementation implements NotificationService {
             message: Messages.text('email.storeSale.message', Locale, { store: oSettings.StoreName }),
             showStatus: false,
             showContact: false,
-            primaryUrl: oSettings.StoreUrl
+            primaryUrl: this.storeUrl(Order, oSettings)
         });
 
     }
@@ -167,7 +167,7 @@ export class NotificationServiceImplementation implements NotificationService {
             message: Messages.text('email.newOrder.message', STORE_LOCALE),
             showStatus: false,
             showContact: true,
-            primaryUrl: this.adminUrl(Settings),
+            primaryUrl: this.adminUrl(Order, Settings),
             primaryLabel: Messages.text('email.newOrder.openAdmin', STORE_LOCALE),
             whatsappUrl: this.whatsappUrl(Order.CustomerPhone, sWhatsappMessage),
             whatsappLabel: Messages.text('email.newOrder.whatsapp', STORE_LOCALE)
@@ -370,25 +370,25 @@ export class NotificationServiceImplementation implements NotificationService {
     }
 
 
-    private storeUrl(Settings: StoreSettingsModel): string | undefined {
+    private storeUrl(Order: OrderModel, Settings: StoreSettingsModel): string | undefined {
 
-        return Settings.StoreUrl || process.env.STORE_URL;
+        return Order.StoreUrl || Settings.StoreUrl || process.env.STORE_URL;
 
     }
 
 
     private trackingUrl(Order: OrderModel, Settings: StoreSettingsModel): string | undefined {
 
-        const sStoreUrl = this.storeUrl(Settings);
+        const sStoreUrl = this.storeUrl(Order, Settings);
 
         return sStoreUrl ? `${sStoreUrl}#/order/${Order.Number}/${Order.AccessCode}` : undefined;
 
     }
 
 
-    private adminUrl(Settings: StoreSettingsModel): string | undefined {
+    private adminUrl(Order: OrderModel, Settings: StoreSettingsModel): string | undefined {
 
-        const sStoreUrl = this.storeUrl(Settings);
+        const sStoreUrl = this.storeUrl(Order, Settings);
 
         return sStoreUrl ? `${sStoreUrl}#/admin` : undefined;
 

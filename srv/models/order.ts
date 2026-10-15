@@ -43,6 +43,7 @@ export type OrderProperties = AuditProperties & Partial<OrderDelivery> & OrderAd
     CustomerName?: string;
     CustomerEmail?: string;
     CustomerPhone?: string;
+    StoreUrl?: string;
     Notes?: string;
     SubtotalAmount: Decimal;
     DiscountAmount: Decimal;
@@ -75,6 +76,7 @@ export class OrderModel extends BaseModel {
             CustomerName: Order.CustomerName ?? undefined,
             CustomerEmail: Order.CustomerEmail ?? undefined,
             CustomerPhone: Order.CustomerPhone ?? undefined,
+            StoreUrl: Order.StoreUrl ?? undefined,
             ZipCode: Order.ZipCode ?? undefined,
             Address: Order.Address ?? undefined,
             AddressNumber: Order.AddressNumber ?? undefined,
@@ -120,6 +122,8 @@ export class OrderModel extends BaseModel {
     public get CustomerEmail() { return this.properties.CustomerEmail; }
 
     public get CustomerPhone() { return this.properties.CustomerPhone; }
+
+    public get StoreUrl() { return this.properties.StoreUrl; }
 
     public get Notes() { return this.properties.Notes; }
 
@@ -226,6 +230,7 @@ export class OrderModel extends BaseModel {
             CustomerName: this.properties.CustomerName,
             CustomerEmail: this.properties.CustomerEmail,
             CustomerPhone: this.properties.CustomerPhone,
+            StoreUrl: this.properties.StoreUrl,
             ZipCode: this.properties.ZipCode,
             Address: this.properties.Address,
             AddressNumber: this.properties.AddressNumber,

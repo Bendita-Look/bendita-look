@@ -43,6 +43,7 @@ type NewOrder = OrderAddress & {
     CustomerName?: string;
     CustomerEmail?: string;
     CustomerPhone?: string;
+    StoreUrl?: string;
     Notes?: string;
     CouponCode?: string;
     Items: RequestedItem[];
@@ -80,7 +81,12 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
         return this.execute(async () => {
 
-            const oCreated = await this.createOrder({ ...oValidation.value, Channel: OrderChannel.Online, Status: OrderStatus.New });
+            const oCreated = await this.createOrder({
+                ...oValidation.value,
+                Channel: OrderChannel.Online,
+                Status: OrderStatus.New,
+                StoreUrl: ServiceLocator.getStoreUrl()
+            });
 
             if (oCreated.isLeft()) {
                 return left(oCreated.value);
@@ -112,7 +118,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 ...oValidation.value,
                 Channel: OrderChannel.Store,
                 Status: OrderStatus.Completed,
-                FulfillmentType: FulfillmentType.Pickup
+                FulfillmentType: FulfillmentType.Pickup,
+                StoreUrl: ServiceLocator.getStoreUrl()
             });
 
             if (oCreated.isLeft()) {
@@ -500,6 +507,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             CustomerName: Input.CustomerName,
             CustomerEmail: Input.CustomerEmail,
             CustomerPhone: Input.CustomerPhone,
+            StoreUrl: Input.StoreUrl,
             ZipCode: Input.ZipCode,
             Address: Input.Address,
             AddressNumber: Input.AddressNumber,

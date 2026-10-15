@@ -24,6 +24,7 @@ entity Orders : cuid, managed {
     CustomerName    : String(120);
     CustomerEmail   : String(120);
     CustomerPhone   : String(20);
+    StoreUrl        : String(255);
     ZipCode         : String(10);
     Address         : String(200);
     AddressNumber   : String(20);
