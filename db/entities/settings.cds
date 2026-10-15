@@ -13,6 +13,7 @@ entity StoreSettings : cuid, managed {
     NotificationEmails : String(500);
     PickupAddress      : String(255);
     StoreUrl           : String(255);
+    WhatsappSignature  : String(255);
 
     @Core.MediaType  : BannerImageType
     BannerImage        : LargeBinary @stream;

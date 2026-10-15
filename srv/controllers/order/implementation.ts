@@ -48,6 +48,13 @@ export class OrderControllerImplementation extends BaseControllerImplementation<
     }
 
 
+    public async trackingUrl(OrderId: string): Promise<BaseControllerResponse> {
+
+        return this.respond(await this.Service.trackingUrl(OrderId), 200);
+
+    }
+
+
     public async quoteOrderUpdate(OrderId: string, Change: OrderChangeInput): Promise<BaseControllerResponse> {
 
         return this.respond(await this.Service.quoteOrderUpdate(OrderId, Change), 200);

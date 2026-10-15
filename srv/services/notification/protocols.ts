@@ -7,4 +7,5 @@ export interface NotificationService {
     sendStoreSaleThanks(Order: OrderModel, Locale: string | undefined): Promise<void>;
     sendOrderUpdated(Order: OrderModel, Locale: string | undefined): Promise<void>;
     sendOrderReturn(Order: OrderModel, Return: OrderReturnModel, Locale: string | undefined): Promise<void>;
+    trackingLink(Order: OrderModel): Promise<string | undefined>;
 }

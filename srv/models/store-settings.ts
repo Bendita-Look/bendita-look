@@ -10,6 +10,7 @@ export type StoreSettingsProperties = AuditProperties & {
     Instagram?: string;
     NotificationEmails?: string;
     PickupAddress?: string;
+    WhatsappSignature?: string;
     StoreUrl?: string;
     BannerImageType?: string;
     BannerImage?: Readable;
@@ -33,6 +34,7 @@ export class StoreSettingsModel extends BaseModel {
             Instagram: Setting.Instagram ?? undefined,
             NotificationEmails: Setting.NotificationEmails ?? undefined,
             PickupAddress: Setting.PickupAddress ?? undefined,
+            WhatsappSignature: Setting.WhatsappSignature ?? undefined,
             StoreUrl: Setting.StoreUrl ?? undefined,
             BannerImageType: Setting.BannerImageType ?? undefined,
             BannerImage: (Setting.BannerImage as unknown as Readable) ?? undefined,
@@ -52,6 +54,8 @@ export class StoreSettingsModel extends BaseModel {
     public get Instagram() { return this.properties.Instagram; }
 
     public get PickupAddress() { return this.properties.PickupAddress; }
+
+    public get WhatsappSignature() { return this.properties.WhatsappSignature; }
 
     public get StoreUrl() { return this.properties.StoreUrl; }
 
@@ -90,6 +94,7 @@ export class StoreSettingsModel extends BaseModel {
             Instagram: this.properties.Instagram,
             NotificationEmails: this.properties.NotificationEmails,
             PickupAddress: this.properties.PickupAddress,
+            WhatsappSignature: this.properties.WhatsappSignature,
             StoreUrl: this.properties.StoreUrl,
             BannerImageType: this.properties.BannerImageType
         });

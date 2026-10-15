@@ -21,7 +21,16 @@ export class OrderRouteImplementation extends BaseRouteImplementation<Order> imp
 
         Service.on('QuoteOrderUpdate', this.quoteOrderUpdate.bind(this));
 
+        Service.on('OrderTrackingUrl', this.trackingUrl.bind(this));
+
         Service.on('UpdateOrderItems', this.updateOrderItems.bind(this));
+
+    }
+
+
+    private async trackingUrl(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.trackingUrl(Request.data.OrderId));
 
     }
 

@@ -228,6 +228,23 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
     }
 
 
+    public async trackingUrl(OrderId: string): Promise<Either<AbstractError, string | null>> {
+
+        return this.execute(async () => {
+
+            const oOrder = await this.Repository.findById(OrderId);
+
+            if (!oOrder) {
+                return left(new NotFoundError('error.orderNotFound'));
+            }
+
+            return right((await this.NotificationService.trackingLink(oOrder)) ?? null);
+
+        });
+
+    }
+
+
     public async quoteOrderUpdate(OrderId: string, Change: OrderChangeInput): Promise<Either<AbstractError, OrderQuote>> {
 
         return this.changeItems(OrderId, Change, false);

@@ -146,6 +146,13 @@ export class NotificationServiceImplementation implements NotificationService {
     }
 
 
+    public async trackingLink(Order: OrderModel): Promise<string | undefined> {
+
+        return this.trackingUrl(Order, await this.StoreSettingsService.currentSettings());
+
+    }
+
+
     private async sendNewOrderToStore(Order: OrderModel, Settings: StoreSettingsModel): Promise<void> {
 
         const sWhatsappMessage = Messages.text('email.newOrder.whatsappMessage', STORE_LOCALE, {

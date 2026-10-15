@@ -57,6 +57,7 @@ export class StoreSettingsServiceImplementation extends BaseServiceImplementatio
                 Instagram: oSettings.Instagram,
                 PickupAddress: oSettings.PickupAddress,
                 StoreUrl: oSettings.StoreUrl,
+                WhatsappSignature: oSettings.WhatsappSignature,
                 BannerId: oSettings.HasBanner ? oSettings.Id : undefined,
                 BannerVersion: oSettings.HasBanner ? oSettings.ModifiedAt : undefined
             });

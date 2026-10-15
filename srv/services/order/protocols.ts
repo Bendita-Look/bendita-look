@@ -19,6 +19,7 @@ export interface OrderService extends BaseService<Order> {
     quoteOrder(Items: OrderItemInput[], CouponCode?: string | null): Promise<Either<AbstractError, OrderQuote>>;
     trackOrder(Number: number, AccessCode: string): Promise<Either<AbstractError, TrackedOrder>>;
     changeStatus(OrderId: string, Status: string, Delivery?: DeliveryInput | null): Promise<Either<AbstractError, boolean>>;
+    trackingUrl(OrderId: string): Promise<Either<AbstractError, string | null>>;
     quoteOrderUpdate(OrderId: string, Change: OrderChangeInput): Promise<Either<AbstractError, OrderQuote>>;
     updateOrderItems(OrderId: string, Change: OrderChangeInput): Promise<Either<AbstractError, OrderQuote>>;
 }

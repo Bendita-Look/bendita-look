@@ -64,6 +64,8 @@ service BenditaLook {
 
     action ExportBackup()                                                 returns entities.ActionResult;
 
+    function OrderTrackingUrl(OrderId: UUID)                              returns String(500);
+
     function SalesReport(Year: Integer)                                   returns entities.SalesReport;
 
 }
