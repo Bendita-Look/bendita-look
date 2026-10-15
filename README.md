@@ -108,7 +108,7 @@ Sem SMTP configurado, os emails são ignorados com um aviso no log e o pedido se
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Servidor de email (Gmail: senha de app) |
 | `STORE_URL` | URL do app UI5, usada no link de acompanhamento |
 | `STORE_NAME`, `STORE_WHATSAPP`, `STORE_EMAIL`, `STORE_INSTAGRAM`, `ADMIN_EMAILS` | Valores iniciais das configurações da loja (usados só na criação; depois edite pelo admin) |
-| `CORS_ORIGINS` | Origens extras permitidas além de `https://davicastr.github.io` e `https://benditalook.github.io` |
+| `CORS_ORIGINS` | Origens extras permitidas além de `https://davicastr.github.io`, `https://bendita-look.github.io` e `https://benditalook.github.io` |
 
 ## Deploy no BTP Trial
 
@@ -144,7 +144,7 @@ No trial o HANA Cloud é parado toda noite. Dois workflows cuidam do ambiente:
 | `HANA_INSTANCE` | Variable | Opcional; sem ela o workflow usa a primeira instância `hana-cloud*` do space |
 | `SMTP_HOST` / `SMTP_PORT` | Variable | Opcionais, padrão `smtp.gmail.com` / `587` |
 | `UAA_INSTANCE` / `UAA_KEY` | Variable | Opcionais, padrão `BenditaLook-uaa` / `BenditaLook-uaa-key` |
-| `UI5_REPOSITORY` / `UI5_PAGES_URL` | Variable | Opcionais, padrão `DaviCastr/SAP-UI5-BenditaLook` (repositório oficial, espelhado em `benditalook/Store`) / `https://benditalook.github.io/Store/` (endereço da loja usado nos emails e no login) |
+| `UI5_REPOSITORY` / `UI5_PAGES_URL` | Variable | Opcionais, padrão `DaviCastr/SAP-UI5-BenditaLook` (repositório oficial, espelhado em `Bendita-Look/Store`) / `https://bendita-look.github.io/Store/` (endereço da loja usado no `STORE_URL` e no login) |
 
 Ao recriar a conta trial: crie a instância do SAP HANA Cloud, atualize `CF_ORG` (e `CF_API`, se a região mudar), rode **Setup BTP trial** com todas as etapas e atribua a role collection `BenditaLook_Admin` ao seu usuário no cockpit.
 

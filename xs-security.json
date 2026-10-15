@@ -30,6 +30,7 @@
       "https://*.hana.ondemand.com/**",
       "http://localhost:*/**",
       "https://davicastr.github.io/**",
+      "https://bendita-look.github.io/**",
       "https://benditalook.github.io/**"
     ]
   }
