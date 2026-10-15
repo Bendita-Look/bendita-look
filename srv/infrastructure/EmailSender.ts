@@ -1,4 +1,5 @@
 import cds from '@sap/cds';
+import { createHash } from 'crypto';
 import nodemailer, { Transporter } from 'nodemailer';
 import { HtmlText } from './HtmlText';
 
@@ -20,21 +21,32 @@ export type EmailMessage = {
     attachments?: EmailAttachment[];
 };
 
+export type EmailServerConfig = {
+    Host: string;
+    Port: number;
+    Username: string;
+    Sender?: string;
+    Password: string;
+};
+
+export interface EmailServerProvider {
+    activeServer(): Promise<EmailServerConfig | null>;
+}
+
 export class EmailSender {
 
     private transporter?: Transporter;
 
+    private transporterKey?: string;
 
-    public isConfigured(): boolean {
-
-        return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
-
-    }
+    constructor(private readonly Provider: EmailServerProvider) { }
 
 
     public async send(Message: EmailMessage): Promise<void> {
 
-        if (!this.isConfigured()) {
+        const oServer = await this.Provider.activeServer();
+
+        if (!oServer) {
 
             cds.log('email').warn('SMTP is not configured, email skipped:', Message.subject);
 
@@ -42,8 +54,15 @@ export class EmailSender {
 
         }
 
-        await this.getTransporter().sendMail({
-            from: `"${Message.fromName}" <${process.env.SMTP_USER}>`,
+        await this.sendWith(oServer, Message);
+
+    }
+
+
+    public async sendWith(Server: EmailServerConfig, Message: EmailMessage): Promise<void> {
+
+        await this.getTransporter(Server).sendMail({
+            from: `"${Message.fromName}" <${Server.Sender || Server.Username}>`,
             to: Message.to,
             cc: Message.cc?.length ? Message.cc : undefined,
             replyTo: Message.replyTo || undefined,
@@ -56,21 +75,25 @@ export class EmailSender {
     }
 
 
-    private getTransporter(): Transporter {
+    private getTransporter(Server: EmailServerConfig): Transporter {
 
-        if (!this.transporter) {
+        const sKey = createHash('sha256').update(JSON.stringify(Server)).digest('hex');
 
-            const iPort = Number(process.env.SMTP_PORT || 587);
+        if (!this.transporter || this.transporterKey !== sKey) {
+
+            this.transporter?.close();
 
             this.transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: iPort,
-                secure: iPort === 465,
+                host: Server.Host,
+                port: Server.Port,
+                secure: Server.Port === 465,
                 auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASSWORD
+                    user: Server.Username,
+                    pass: Server.Password
                 }
             });
+
+            this.transporterKey = sKey;
 
         }
 

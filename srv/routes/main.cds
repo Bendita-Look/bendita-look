@@ -72,6 +72,14 @@ service BenditaLook {
 
     action ExportBackup()                                                 returns entities.ActionResult;
 
+    action SaveEmailServer(Server: entities.EmailServerInput)             returns entities.ActionResult;
+
+    action RemoveEmailServer()                                            returns entities.ActionResult;
+
+    action SendTestEmail(Recipient: String(120))                          returns entities.ActionResult;
+
+    function EmailServer()                                                returns entities.EmailServerInfo;
+
     function OrderTrackingUrl(OrderId: UUID)                              returns String(500);
 
     function SalesReport(Year: Integer)                                   returns entities.SalesReport;

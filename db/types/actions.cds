@@ -5,6 +5,24 @@ type ActionResult {
     data    : LargeString;
 }
 
+type EmailServerInput {
+    Host     : String(120);
+    Port     : Integer;
+    Username : String(120);
+    Sender   : String(120);
+    Password : String(200);
+}
+
+type EmailServerInfo {
+    Host             : String(120);
+    Port             : Integer;
+    Username         : String(120);
+    Sender           : String(120);
+    Saved            : Boolean;
+    PasswordReadable : Boolean;
+    Source           : String(20);
+}
+
 type OrderItemInput {
     Variant_ID : UUID;
     Quantity   : Integer;

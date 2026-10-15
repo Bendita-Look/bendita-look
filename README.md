@@ -105,13 +105,14 @@ npm run watch           # http://localhost:4004
 
 Usuários locais (basic auth): `davi / 123456` (Admin) e `cliente / 123456` (sem role). Exemplos de chamadas em `test/http`.
 
-Sem SMTP configurado, os emails são ignorados com um aviso no log e o pedido segue normalmente.
+O servidor de email pode ser cadastrado no admin (Configurações > Servidor de email), com botão de email de teste. A senha fica criptografada (AES-256-GCM) com uma chave derivada do `clientsecret` do XSUAA (ou da variável `SETTINGS_SECRET`, se definida), nunca volta para a tela e não entra no backup; se a chave mudar, o admin só precisa informar a senha de novo. Sem servidor cadastrado, valem as variáveis `SMTP_*`; sem nenhum dos dois, os emails são ignorados com um aviso no log e o pedido segue normalmente.
 
 ## Variáveis de ambiente
 
 | Variável | Descrição |
 |---|---|
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Servidor de email (Gmail: senha de app) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Servidor de email usado quando nenhum servidor foi cadastrado no admin (Gmail: senha de app) |
+| `SETTINGS_SECRET` | Opcional; chave usada para criptografar a senha do servidor de email no lugar do `clientsecret` do XSUAA |
 | `STORE_URL` | URL do app UI5, usada no link de acompanhamento |
 | `STORE_NAME`, `STORE_WHATSAPP`, `STORE_EMAIL`, `STORE_INSTAGRAM`, `ADMIN_EMAILS` | Valores iniciais das configurações da loja (usados só na criação; depois edite pelo admin) |
 | `CORS_ORIGINS` | Origens extras permitidas além de `https://davicastr.github.io`, `https://bendita-look.github.io` e `https://benditalook.github.io` |
@@ -141,9 +142,9 @@ No trial o HANA Cloud é parado toda noite. Dois workflows cuidam do ambiente:
 | `CF_USERNAME` | Secret | Email do usuário do BTP |
 | `CF_PASSWORD` | Secret | Senha do usuário do BTP |
 | `UI5_REPO_TOKEN` | Secret | Fine-grained token com *Contents: Read and write* no repositório do UI5 |
-| `SMTP_PASSWORD` | Secret | Senha de app do Gmail |
+| `SMTP_PASSWORD` | Secret | Opcional se o servidor de email for cadastrado no admin; senha de app do Gmail |
 | `CF_ORG` | Variable | Org do Cloud Foundry (ex.: `d4e1c97ctrial`) |
-| `SMTP_USER` | Variable | Email que envia as mensagens |
+| `SMTP_USER` | Variable | Opcional se o servidor de email for cadastrado no admin; email que envia as mensagens |
 | `CF_API` | Variable | Opcional, padrão `https://api.cf.us10-001.hana.ondemand.com` |
 | `CF_SPACE` | Variable | Opcional, padrão `dev` |
 | `CF_APP` | Variable | Opcional, padrão `BenditaLook-srv` |

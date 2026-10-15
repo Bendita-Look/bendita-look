@@ -21,3 +21,11 @@ entity StoreSettings : cuid, managed {
     @Core.IsMediaType: true
     BannerImageType    : String(50);
 }
+
+entity EmailServers : cuid, managed {
+    Host     : String(120) @mandatory;
+    Port     : Integer @mandatory;
+    Username : String(120) @mandatory;
+    Sender   : String(120);
+    Password : String(1000) @mandatory;
+}
