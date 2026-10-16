@@ -27,7 +27,12 @@ service Catalog {
             Colors,
             Images,
             Variants,
-            createdAt
+            createdAt,
+            case
+                when exists Variants[Stock > 0]
+                     then true
+                else false
+            end as Available : Boolean
         }
         where
             Active = true;

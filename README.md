@@ -105,7 +105,7 @@ npm run watch           # http://localhost:4004
 
 Usuários locais (basic auth): `davi / 123456` (Admin) e `cliente / 123456` (sem role). Exemplos de chamadas em `test/http`.
 
-O servidor de email pode ser cadastrado no admin (Configurações > Servidor de email), com botão de email de teste. A senha fica criptografada (AES-256-GCM) com uma chave derivada do `clientsecret` do XSUAA (ou da variável `SETTINGS_SECRET`, se definida), nunca volta para a tela e não entra no backup; se a chave mudar, o admin só precisa informar a senha de novo. Sem servidor cadastrado, valem as variáveis `SMTP_*`; sem nenhum dos dois, os emails são ignorados com um aviso no log e o pedido segue normalmente.
+O servidor de email pode ser cadastrado no admin (Configurações > Servidor de email), com botão de email de teste. A senha fica criptografada (AES-256-GCM) com uma chave derivada do `clientsecret` do XSUAA (ou da variável `SETTINGS_SECRET`, se definida), nunca volta para a tela e vai criptografada no backup. Ao importar um backup, o servidor só é restaurado se o ambiente ainda não tiver um cadastrado. Para a senha continuar legível em outro ambiente (conta trial recriada), cadastre o secret `SETTINGS_SECRET` no GitHub antes de salvar o servidor; se a chave mudar, o admin só precisa informar a senha de novo. Sem servidor cadastrado, valem as variáveis `SMTP_*`; sem nenhum dos dois, os emails são ignorados com um aviso no log e o pedido segue normalmente.
 
 ## Variáveis de ambiente
 
@@ -143,6 +143,7 @@ No trial o HANA Cloud é parado toda noite. Dois workflows cuidam do ambiente:
 | `CF_PASSWORD` | Secret | Senha do usuário do BTP |
 | `UI5_REPO_TOKEN` | Secret | Fine-grained token com *Contents: Read and write* no repositório do UI5 |
 | `SMTP_PASSWORD` | Secret | Opcional se o servidor de email for cadastrado no admin; senha de app do Gmail |
+| `SETTINGS_SECRET` | Secret | Opcional, recomendado; chave fixa (ex.: 32+ caracteres aleatórios) que protege a senha do servidor de email e permite restaurá-la de um backup em outro ambiente |
 | `CF_ORG` | Variable | Org do Cloud Foundry (ex.: `d4e1c97ctrial`) |
 | `SMTP_USER` | Variable | Opcional se o servidor de email for cadastrado no admin; email que envia as mensagens |
 | `CF_API` | Variable | Opcional, padrão `https://api.cf.us10-001.hana.ondemand.com` |

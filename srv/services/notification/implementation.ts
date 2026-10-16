@@ -9,6 +9,7 @@ import { StoreSettingsModel } from '@/models/store-settings';
 import { StoreSettingsService } from '@/services/store-settings';
 import { ProductImageRepository } from '@/repositories/product-image';
 import { StreamConverter } from '@/infrastructure/StreamConverter';
+import { ImageThumbnail } from '@/infrastructure/ImageThumbnail';
 import { EmailAttachment, EmailSender } from '@/infrastructure/EmailSender';
 import { TemplateRenderer } from '@/infrastructure/TemplateRenderer';
 import { Messages } from '@/infrastructure/Messages';
@@ -24,7 +25,6 @@ const LOGO_CID = 'logo';
 const LOGO_FILE = 'logo.png';
 const ITEM_IMAGE_CID_PREFIX = 'item-';
 const CUSTOMER_ARRANGED_STATUS_KEY = 'OUT_FOR_DELIVERY_CUSTOMER';
-const DEFAULT_IMAGE_EXTENSION = 'jpg';
 const STORE_LOCALE = undefined;
 
 type EmailKind = 'orderCreated' | 'statusChanged' | 'storeSale' | 'newOrder' | 'orderUpdated' | 'orderReturn';
@@ -209,13 +209,14 @@ export class NotificationServiceImplementation implements NotificationService {
 
             const oImage = await this.ImageRepository.findContentById(sImageId);
             const oContent = await StreamConverter.toBuffer(oImage?.Image);
+            const oThumbnail = oContent ? await ImageThumbnail.create(oContent) : null;
 
-            if (oImage && oContent) {
+            if (oThumbnail) {
                 oAttachments.set(sImageId, {
-                    filename: `${sImageId}.${oImage.FileExtension ?? DEFAULT_IMAGE_EXTENSION}`,
+                    filename: `${sImageId}.${ImageThumbnail.extension}`,
                     cid: `${ITEM_IMAGE_CID_PREFIX}${sImageId}`,
-                    content: oContent,
-                    contentType: oImage.ImageType
+                    content: oThumbnail,
+                    contentType: ImageThumbnail.contentType
                 });
             }
 

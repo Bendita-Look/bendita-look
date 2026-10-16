@@ -9,6 +9,7 @@ import { oProductVariantRepositoryFactory } from '../repositories/product-varian
 import { oOrderRepositoryFactory } from '../repositories/order';
 import { oOrderItemRepositoryFactory } from '../repositories/order-item';
 import { oStoreSettingsRepositoryFactory } from '../repositories/store-settings';
+import { oEmailServerRepositoryFactory } from '../repositories/email-server';
 import { oPromotionRepositoryFactory } from '../repositories/promotion';
 import { oOrderPromotionRepositoryFactory } from '../repositories/order-promotion';
 import { oOrderReturnRepositoryFactory } from '../repositories/order-return';
@@ -36,7 +37,8 @@ const makeBackupService = (): BackupService => {
             { name: 'OrderReturnItems', repository: oOrderReturnItemRepositoryFactory },
             { name: 'StockEntries', repository: oStockEntryRepositoryFactory },
             { name: 'StockEntryItems', repository: oStockEntryItemRepositoryFactory },
-            { name: 'StoreSettings', repository: oStoreSettingsRepositoryFactory, overwriteExisting: true }
+            { name: 'StoreSettings', repository: oStoreSettingsRepositoryFactory, overwriteExisting: true },
+            { name: 'EmailServers', repository: oEmailServerRepositoryFactory }
         ]
     );
 

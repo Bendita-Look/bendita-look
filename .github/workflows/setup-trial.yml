@@ -91,6 +91,7 @@ jobs:
           SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
           SMTP_USER: ${{ vars.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SETTINGS_SECRET: ${{ secrets.SETTINGS_SECRET }}
         run: bash .github/scripts/configure-smtp.sh
 
       - name: Update UI5 runtime configuration
