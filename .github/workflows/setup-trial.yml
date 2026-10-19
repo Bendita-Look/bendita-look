@@ -30,8 +30,8 @@ jobs:
       HANA_INSTANCE: ${{ vars.HANA_INSTANCE }}
       UAA_INSTANCE: ${{ vars.UAA_INSTANCE || 'BenditaLook-uaa' }}
       UAA_KEY: ${{ vars.UAA_KEY || 'BenditaLook-uaa-key' }}
-      UI5_REPOSITORY: ${{ vars.UI5_REPOSITORY || 'DaviCastr/SAP-UI5-BenditaLook' }}
-      UI5_PAGES_URL: ${{ vars.UI5_PAGES_URL || 'https://bendita-look.github.io/Store/' }}
+      UI5_REPOSITORY: ${{ vars.UI5_REPOSITORY || 'Bendita-Look/bendita-look.github.io' }}
+      UI5_PAGES_URL: ${{ vars.UI5_PAGES_URL || 'https://bendita-look.github.io/' }}
       GIT_AUTHOR_NAME: Davi Castro
       GIT_AUTHOR_EMAIL: davifgeo@gmail.com
 
