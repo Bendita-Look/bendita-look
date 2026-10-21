@@ -10,6 +10,8 @@ service Catalog {
             ID,
             Name,
             Description,
+            CategoryImage,
+            CategoryImageType,
             Products
         }
         where
@@ -27,6 +29,7 @@ service Catalog {
             Colors,
             Images,
             Variants,
+            Measurements,
             createdAt,
             case
                 when exists Variants[Stock > 0]

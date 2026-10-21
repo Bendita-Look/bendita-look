@@ -16,6 +16,8 @@ service BenditaLook {
 
     entity ProductVariants as projection on entities.ProductVariants;
 
+    entity ProductMeasurements as projection on entities.ProductMeasurements;
+
     @readonly
     entity Orders          as projection on entities.Orders excluding {
         AccessCode
