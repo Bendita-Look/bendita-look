@@ -83,4 +83,8 @@ service Catalog {
     action   QuoteOrder(Items: many entities.OrderItemInput,
                         CouponCode: String(20))                   returns entities.OrderQuote;
 
+    action   Subscribe(Input: entities.NewsletterSubscribeInput)   returns entities.NewsletterSubscribeResult;
+
+    action   Unsubscribe(Token: String(64))                        returns entities.NewsletterUnsubscribeResult;
+
 }

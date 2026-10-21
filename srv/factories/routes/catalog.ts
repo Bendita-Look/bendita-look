@@ -3,10 +3,11 @@ import { CatalogRouteImplementation } from '@/routes/catalog/implementation';
 import { oOrderControllerFactory } from '../controllers/order';
 import { oStoreSettingsRouteFactory } from './store-settings';
 import { oPromotionRouteFactory } from './promotion';
+import { oNewsletterRouteFactory } from './newsletter';
 
 const makeCatalogRoute = (): CatalogRoute => {
 
-    return new CatalogRouteImplementation(oOrderControllerFactory, oStoreSettingsRouteFactory, oPromotionRouteFactory);
+    return new CatalogRouteImplementation(oOrderControllerFactory, oStoreSettingsRouteFactory, oPromotionRouteFactory, oNewsletterRouteFactory);
 
 };
 

@@ -55,6 +55,11 @@ service BenditaLook {
     @odata.draft.enabled
     entity StorePolicies   as projection on entities.StorePolicies;
 
+    entity Subscribers     as projection on entities.Subscribers;
+
+    @odata.draft.enabled
+    entity NewsletterCampaigns as projection on entities.NewsletterCampaigns;
+
     action ChangeOrderStatus(OrderId: UUID,
                              Status: entities.OrderStatus,
                              Delivery: entities.DeliveryInput)            returns entities.ActionResult;
@@ -82,6 +87,8 @@ service BenditaLook {
     action RemoveEmailServer()                                            returns entities.ActionResult;
 
     action SendTestEmail(Recipient: String(120))                          returns entities.ActionResult;
+
+    action SendNewsletter(Campaign: entities.NewsletterSendInput)         returns entities.NewsletterSendResult;
 
     function EmailServer()                                                returns entities.EmailServerInfo;
 

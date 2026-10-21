@@ -3,6 +3,7 @@ import { Order } from '@models/apps/dflc/benditalook/entities';
 import { OrderController } from '@/controllers/order';
 import { StoreSettingsRoute } from '@/routes/store-settings/index';
 import { PromotionRoute } from '@/routes/promotion/index';
+import { NewsletterRoute } from '@/routes/newsletter/index';
 import { CatalogRoute } from './protocols';
 import { BaseRouteImplementation } from '../base/implementation';
 
@@ -11,7 +12,8 @@ export class CatalogRouteImplementation extends BaseRouteImplementation<Order> i
     constructor(
         protected readonly Controller: OrderController,
         private readonly StoreSettingsRoute: StoreSettingsRoute,
-        private readonly PromotionRoute: PromotionRoute
+        private readonly PromotionRoute: PromotionRoute,
+        private readonly NewsletterRoute: NewsletterRoute
     ) {
 
         super();
@@ -32,6 +34,8 @@ export class CatalogRouteImplementation extends BaseRouteImplementation<Order> i
         this.StoreSettingsRoute.catalog(Service);
 
         this.PromotionRoute.catalog(Service);
+
+        this.NewsletterRoute.catalog(Service);
 
     }
 

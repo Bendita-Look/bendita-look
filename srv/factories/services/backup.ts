@@ -17,6 +17,8 @@ import { oOrderReturnRepositoryFactory } from '../repositories/order-return';
 import { oOrderReturnItemRepositoryFactory } from '../repositories/order-return-item';
 import { oStockEntryRepositoryFactory } from '../repositories/stock-entry';
 import { oStockEntryItemRepositoryFactory } from '../repositories/stock-entry-item';
+import { oSubscriberRepositoryFactory } from '../repositories/subscriber';
+import { oNewsletterCampaignRepositoryFactory } from '../repositories/newsletter-campaign';
 
 const makeBackupService = (): BackupService => {
 
@@ -40,7 +42,9 @@ const makeBackupService = (): BackupService => {
             { name: 'StockEntryItems', repository: oStockEntryItemRepositoryFactory },
             { name: 'StoreSettings', repository: oStoreSettingsRepositoryFactory, overwriteExisting: true },
             { name: 'EmailServers', repository: oEmailServerRepositoryFactory },
-            { name: 'StorePolicies', repository: oStorePolicyRepositoryFactory }
+            { name: 'StorePolicies', repository: oStorePolicyRepositoryFactory },
+            { name: 'Subscribers', repository: oSubscriberRepositoryFactory },
+            { name: 'NewsletterCampaigns', repository: oNewsletterCampaignRepositoryFactory }
         ]
     );
 
