@@ -52,6 +52,9 @@ service BenditaLook {
     @Capabilities.DeleteRestrictions.Deletable : false
     entity StoreSettings   as projection on entities.StoreSettings;
 
+    @odata.draft.enabled
+    entity StorePolicies   as projection on entities.StorePolicies;
+
     action ChangeOrderStatus(OrderId: UUID,
                              Status: entities.OrderStatus,
                              Delivery: entities.DeliveryInput)            returns entities.ActionResult;

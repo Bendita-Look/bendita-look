@@ -29,3 +29,12 @@ entity EmailServers : cuid, managed {
     Sender   : String(120);
     Password : String(1000) @mandatory;
 }
+
+entity StorePolicies : cuid, managed {
+    Type      : String(20) default 'OTHER' @mandatory;
+    Title     : String(120) @mandatory;
+    Slug      : String(120);
+    Content   : LargeString;
+    Active    : Boolean default true;
+    SortOrder : Integer default 0;
+}

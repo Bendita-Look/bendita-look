@@ -55,6 +55,19 @@ service Catalog {
         };
 
     @readonly
+    entity StorePolicies   as
+        projection on entities.StorePolicies {
+            ID,
+            Type,
+            Title,
+            Slug,
+            Content,
+            SortOrder
+        }
+        where
+            Active = true;
+
+    @readonly
     entity ProductVariants as projection on entities.ProductVariants excluding {
         StockOnEdit
     };
