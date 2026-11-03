@@ -13,6 +13,7 @@ import { ImageThumbnail } from '@/infrastructure/ImageThumbnail';
 import { EmailAttachment, EmailSender } from '@/infrastructure/EmailSender';
 import { TemplateRenderer } from '@/infrastructure/TemplateRenderer';
 import { Messages } from '@/infrastructure/Messages';
+import { StoreUrl } from '@/infrastructure/StoreUrl';
 import { NotificationService } from './protocols';
 
 const CURRENCY = 'BRL';
@@ -108,7 +109,7 @@ export class NotificationServiceImplementation implements NotificationService {
             message: Messages.text('email.storeSale.message', Locale, { store: oSettings.StoreName }),
             showStatus: false,
             showContact: false,
-            primaryUrl: oSettings.StoreUrl
+            primaryUrl: this.storeUrl(oSettings)
         });
 
     }
@@ -373,7 +374,7 @@ export class NotificationServiceImplementation implements NotificationService {
 
     private storeUrl(Settings: StoreSettingsModel): string | undefined {
 
-        return Settings.StoreUrl || process.env.STORE_URL;
+        return StoreUrl.rootOf(Settings.StoreUrl) || undefined;
 
     }
 

@@ -93,10 +93,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             const oOrder = oResult.value;
             const sLocale = ServiceLocator.getLocale();
 
-            ServiceLocator.afterCommit(async () => {
-                this.NotificationService.sendOrderCreated(oOrder, sLocale);
-                await this.PushService.notifyNewOrder(oOrder, sLocale);
-            });
+            ServiceLocator.afterCommit(() => this.NotificationService.sendOrderCreated(oOrder, sLocale));
+            ServiceLocator.afterCommit(() => this.PushService.notifyNewOrder(oOrder, sLocale));
 
             return right({ Number: oOrder.Number, AccessCode: oOrder.AccessCode });
 

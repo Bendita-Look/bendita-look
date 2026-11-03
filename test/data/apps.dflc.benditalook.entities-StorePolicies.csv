@@ -1,4 +1,4 @@
 ID;Type;Title;Slug;Content;Active;SortOrder
-e0p00000-0000-4000-8000-000000000001;DELIVERY;Entrega e frete;entrega;Enviamos para todo o Brasil pelos Correios e transportadora. O prazo é calculado no atendimento pelo WhatsApp, após a confirmação do pedido.;true;1
-e0p00000-0000-4000-8000-000000000002;RETURN;Trocas e devoluções;trocas;Você tem até 7 dias corridos após o recebimento para solicitar troca ou devolução, conforme o Código de Defesa do Consumidor. A peça deve estar sem uso, com etiqueta e embalagem originais.;true;2
-e0p00000-0000-4000-8000-000000000003;PRIVACY;Política de privacidade;privacidade;Usamos seus dados apenas para processar pedidos, entregas e contato pelo WhatsApp. Não compartilhamos suas informações com terceiros para fins de marketing.;true;3
+e0f00000-0000-4000-8000-000000000001;DELIVERY;Entrega e frete;entrega;Enviamos para todo o Brasil pelos Correios e transportadora. O prazo é calculado no atendimento pelo WhatsApp, após a confirmação do pedido.;true;1
+e0f00000-0000-4000-8000-000000000002;RETURN;Trocas e devoluções;trocas;Você tem até 7 dias corridos após o recebimento para solicitar troca ou devolução, conforme o Código de Defesa do Consumidor. A peça deve estar sem uso, com etiqueta e embalagem originais.;true;2
+e0f00000-0000-4000-8000-000000000003;PRIVACY;Política de privacidade;privacidade;Usamos seus dados apenas para processar pedidos, entregas e contato pelo WhatsApp. Não compartilhamos suas informações com terceiros para fins de marketing.;true;3

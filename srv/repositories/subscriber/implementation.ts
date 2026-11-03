@@ -22,12 +22,10 @@ export class SubscriberRepositoryImplementation extends BaseRepositoryImplementa
 
         const oRows = await cds.run(
             SELECT.from(this.getEntity())
-                .where({ Email: { like: Email } })
+                .where({ Email })
         );
 
-        const oMatch = this.mapResult(oRows).find((Subscriber) => Subscriber.Email.toLowerCase() === Email.toLowerCase());
-
-        return oMatch ?? null;
+        return this.mapResult(oRows)[0] ?? null;
 
     }
 

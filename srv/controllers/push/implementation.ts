@@ -15,7 +15,7 @@ export class PushControllerImplementation extends BaseControllerImplementation<u
 
     public publicKey(): BaseControllerResponse {
 
-        return { status: 200, data: { publicKey: this.Service.publicKey() } };
+        return { status: 200, data: this.Service.publicKey() };
 
     }
 

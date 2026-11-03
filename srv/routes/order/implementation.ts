@@ -60,7 +60,7 @@ export class OrderRouteImplementation extends BaseRouteImplementation<Order> imp
 
     private async deleteOrders(Request: Request): Promise<unknown> {
 
-        const oResult = await this.Controller.deleteOrders(Request.data.OrderIds ?? [], Request.data.RestoreStock !== false);
+        const oResult = await this.Controller.deleteOrders(Request.data.OrderIds ?? [], Request.data.RestoreStock === true);
 
         this.rejectOnError(Request, oResult);
 

@@ -1,6 +1,8 @@
 import path from 'path';
 import { NewsletterService } from '@/services/newsletter';
 import { NewsletterServiceImplementation } from '@/services/newsletter/implementation';
+import { NEWSLETTER_LIMITS } from '@/constants/newsletter-limits';
+import { RateLimiter } from '@/infrastructure/RateLimiter';
 import { TemplateRenderer } from '@/infrastructure/TemplateRenderer';
 import { oSubscriberRepositoryFactory } from '../repositories/subscriber';
 import { oNewsletterCampaignRepositoryFactory } from '../repositories/newsletter-campaign';
@@ -17,6 +19,7 @@ const makeNewsletterService = (): NewsletterService => {
         oStoreSettingsServiceFactory,
         new TemplateRenderer(TEMPLATES_DIRECTORY),
         oEmailServerServiceFactory,
+        new RateLimiter(NEWSLETTER_LIMITS.maxSubscribeAttempts, NEWSLETTER_LIMITS.windowInMinutes),
         TEMPLATES_DIRECTORY
     );
 

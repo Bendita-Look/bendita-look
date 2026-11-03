@@ -6,6 +6,7 @@ import { oProductRepositoryFactory } from '../repositories/product';
 import { oProductColorRepositoryFactory } from '../repositories/product-color';
 import { oProductImageRepositoryFactory } from '../repositories/product-image';
 import { oProductVariantRepositoryFactory } from '../repositories/product-variant';
+import { oProductMeasurementRepositoryFactory } from '../repositories/product-measurement';
 import { oOrderRepositoryFactory } from '../repositories/order';
 import { oOrderItemRepositoryFactory } from '../repositories/order-item';
 import { oStoreSettingsRepositoryFactory } from '../repositories/store-settings';
@@ -32,6 +33,7 @@ const makeBackupService = (): BackupService => {
             { name: 'Products', repository: oProductRepositoryFactory },
             { name: 'ProductColors', repository: oProductColorRepositoryFactory },
             { name: 'ProductVariants', repository: oProductVariantRepositoryFactory },
+            { name: 'ProductMeasurements', repository: oProductMeasurementRepositoryFactory },
             { name: 'ProductImages', repository: oProductImageRepositoryFactory },
             { name: 'Promotions', repository: oPromotionRepositoryFactory },
             { name: 'Orders', repository: oOrderRepositoryFactory },

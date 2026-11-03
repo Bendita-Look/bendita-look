@@ -33,7 +33,7 @@ entity EmailServers : cuid, managed {
 entity StorePolicies : cuid, managed {
     Type      : String(20) default 'OTHER' @mandatory;
     Title     : String(120) @mandatory;
-    Slug      : String(120);
+    Slug      : String(120) @assert.format: '^[a-z0-9-]*$' @assert.format.message: 'error.invalidPolicySlug';
     Content   : LargeString;
     Active    : Boolean default true;
     SortOrder : Integer default 0;

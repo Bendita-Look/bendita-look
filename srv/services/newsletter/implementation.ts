@@ -13,6 +13,8 @@ import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ValidationError } from '@/errors';
 import { EmailAttachment, EmailSender } from '@/infrastructure/EmailSender';
 import { Messages } from '@/infrastructure/Messages';
+import { RateLimiter } from '@/infrastructure/RateLimiter';
+import { StoreUrl } from '@/infrastructure/StoreUrl';
 import { TemplateRenderer } from '@/infrastructure/TemplateRenderer';
 import { StoreSettingsModel } from '@/models/store-settings';
 import { SubscriberModel } from '@/models/subscriber';
@@ -33,14 +35,9 @@ const LOGO_CID = 'logo';
 const LOGO_FILE = 'logo.png';
 const UNSUBSCRIBE_PATH = 'unsubscribe';
 
-/** Janela curta de proteção contra cadastros repetidos vindos do mesmo IP. */
-const RATE_LIMIT = { windowMs: 60_000, max: 5 };
-
 export class NewsletterServiceImplementation extends BaseServiceImplementation<Subscriber> implements NewsletterService {
 
     private readonly Sender: EmailSender;
-
-    private readonly recentSubscriptions = new Map<string, number[]>();
 
 
     constructor(
@@ -49,6 +46,7 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
         private readonly SettingsService: StoreSettingsService,
         private readonly TemplateRenderer: TemplateRenderer,
         private readonly EmailServer: EmailServerService,
+        private readonly SubscribeLimiter: RateLimiter,
         private readonly TemplatesDirectory: string
     ) {
 
@@ -67,7 +65,7 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
             return left(oValidation.value);
         }
 
-        if (this.isRateLimited(ClientIp)) {
+        if (!this.SubscribeLimiter.tryConsume(ClientIp || 'unknown')) {
             return left(new ValidationError('error.tooManySubscribeAttempts'));
         }
 
@@ -196,7 +194,7 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
 
                     iFailed++;
 
-                    cds.log('newsletter').warn(`Failed to send to ${oSubscriber.Email}:`, (oError as Error).message);
+                    cds.log('newsletter').warn(`Failed to send to subscriber ${oSubscriber.Id}:`, (oError as Error).message);
 
                 }
 
@@ -215,6 +213,7 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
             return right({
                 Sent: iSent > 0,
                 Recipients: iSent,
+                Failures: iFailed,
                 Message: Messages.text('newsletter.sent', Locale, { sent: iSent, failed: iFailed })
             });
 
@@ -229,7 +228,6 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
             language: Locale || 'pt',
             storeName: Settings.StoreName,
             contactEmail: Settings.ContactEmail,
-            storeUrl: Settings.StoreUrl,
             whatsapp: Settings.Whatsapp,
             instagram: Settings.Instagram,
             body: Body,
@@ -253,9 +251,7 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
 
     private unsubscribeUrl(Settings: StoreSettingsModel, Token: string): string {
 
-        const sBase = (Settings.StoreUrl ?? '').replace(/\/+$/, '');
-
-        return `${sBase}/#/${UNSUBSCRIBE_PATH}/${encodeURIComponent(Token)}`;
+        return `${StoreUrl.rootOf(Settings.StoreUrl)}#/${UNSUBSCRIBE_PATH}/${encodeURIComponent(Token)}`;
 
     }
 
@@ -301,20 +297,6 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
         }
 
         return right(true);
-
-    }
-
-
-    private isRateLimited(ClientIp: string): boolean {
-
-        const sKey = ClientIp || 'unknown';
-        const iNow = Date.now();
-        const aRecent = (this.recentSubscriptions.get(sKey) ?? []).filter((iTime) => iNow - iTime < RATE_LIMIT.windowMs);
-
-        aRecent.push(iNow);
-        this.recentSubscriptions.set(sKey, aRecent);
-
-        return aRecent.length > RATE_LIMIT.max;
 
     }
 

@@ -7,6 +7,8 @@ import {
 import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ValidationError } from '@/errors';
 import { Messages } from '@/infrastructure/Messages';
+import { ServiceLocator } from '@/infrastructure/ServiceLocator';
+import { StoreUrl } from '@/infrastructure/StoreUrl';
 import { OrderModel } from '@/models/order';
 import { PushSubscriptionModel } from '@/models/push-subscription';
 import { PushSubscriptionRepository } from '@/repositories/push-subscription';
@@ -17,6 +19,8 @@ import { BaseServiceImplementation } from '../base/implementation';
 const DEFAULT_VAPID_SUBJECT = 'mailto:contato@benditalook.com';
 const ADMIN_ORDERS_PATH = 'admin/orders';
 const TEST_PATH = 'admin';
+const SEND_OPTIONS: webpush.RequestOptions = { TTL: 3600, urgency: 'high', timeout: 5000 };
+const UNUSABLE_SUBSCRIPTION_STATUSES = [404, 410];
 
 export class PushServiceImplementation extends BaseServiceImplementation<PushSubscription> implements PushService {
 
@@ -69,7 +73,7 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
         const sP256dh = (Input?.P256dh ?? '').trim();
         const sAuth = (Input?.Auth ?? '').trim();
 
-        if (this.isBlank(sEndpoint) || this.isBlank(sP256dh) || this.isBlank(sAuth)) {
+        if (this.isBlank(sEndpoint) || this.isBlank(sP256dh) || this.isBlank(sAuth) || !this.isHttpsUrl(sEndpoint)) {
             return left(new ValidationError('error.invalidPushSubscription'));
         }
 
@@ -93,7 +97,7 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
 
             await this.Repository.upsertEntries([oModel.toEntityObject()]);
 
-            return right({ success: true, data: 'push.subscribed' });
+            return right({ success: true, data: Messages.text('push.subscribed', ServiceLocator.getLocale()) });
 
         });
 
@@ -110,7 +114,7 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
 
             await this.Repository.removeByEndpoint(Endpoint.trim());
 
-            return right({ success: true, data: 'push.unsubscribed' });
+            return right({ success: true, data: Messages.text('push.unsubscribed', ServiceLocator.getLocale()) });
 
         });
 
@@ -185,14 +189,14 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
 
             try {
 
-                await webpush.sendNotification(oSubscription.toWebPushSubscription(), sBody);
+                await webpush.sendNotification(oSubscription.toWebPushSubscription(), sBody, SEND_OPTIONS);
                 iSent += 1;
 
             } catch (oError: unknown) {
 
                 const iStatus = (oError as { statusCode?: number })?.statusCode;
 
-                if (iStatus === 404 || iStatus === 410) {
+                if (iStatus !== undefined && UNUSABLE_SUBSCRIPTION_STATUSES.includes(iStatus)) {
 
                     await this.Repository.deactivate(oSubscription.Endpoint);
 
@@ -239,15 +243,24 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
     }
 
 
-    private normalizeStoreUrl(StoreUrl: string | undefined): string {
+    private normalizeStoreUrl(Url: string | undefined): string {
 
-        const sUrl = (StoreUrl ?? '').trim();
+        return StoreUrl.rootOf(Url) || '/';
 
-        if (!sUrl) {
-            return '/';
+    }
+
+
+    private isHttpsUrl(Value: string): boolean {
+
+        try {
+
+            return new URL(Value).protocol === 'https:';
+
+        } catch {
+
+            return false;
+
         }
-
-        return sUrl.split('#')[0].replace(/\/+$/, '') + '/';
 
     }
 

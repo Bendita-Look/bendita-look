@@ -271,6 +271,7 @@ type NewsletterSendInput {
 type NewsletterSendResult {
     Sent      : Boolean;
     Recipients : Integer;
+    Failures   : Integer;
     Message   : String(255);
 }
 
