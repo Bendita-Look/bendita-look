@@ -115,6 +115,19 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
     }
 
 
+    public async deleteCascade(Id: string): Promise<void> {
+
+        const oReturnIds = SELECT.from(ServiceLocator.getEntity('OrderReturns')).columns('ID').where({ Order_ID: Id });
+
+        await cds.run(DELETE.from(ServiceLocator.getEntity('OrderReturnItems')).where({ Return_ID: { in: oReturnIds } }));
+        await cds.run(DELETE.from(ServiceLocator.getEntity('OrderReturns')).where({ Order_ID: Id }));
+        await cds.run(DELETE.from(ServiceLocator.getEntity('OrderPromotions')).where({ Order_ID: Id }));
+        await cds.run(DELETE.from(ServiceLocator.getEntity('OrderItems')).where({ Order_ID: Id }));
+        await cds.run(DELETE.from(this.getEntity()).where({ ID: Id }));
+
+    }
+
+
     protected entityName(): string {
 
         return 'Orders';

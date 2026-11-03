@@ -6,3 +6,5 @@ using from './backups';
 using from './settings';
 using from './promotions';
 using from './stock';
+using from './newsletter';
+using from './push';

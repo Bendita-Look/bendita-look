@@ -23,6 +23,19 @@ Authorization: Basic {{username}}:{{password}}
 }
 
 
+### Excluir pedidos definitivamente (devolve estoque e libera cupom se RestoreStock=true)
+# @name DeleteOrders
+POST {{admin}}/DeleteOrders
+Content-Type: application/json
+Accept-Language: pt-BR
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "OrderIds": ["{{Orders_GET.response.body.$.value[0].ID}}"],
+  "RestoreStock": true
+}
+
+
 ### Produto - criar draft
 # @name Products_Draft_POST
 POST {{admin}}/Products

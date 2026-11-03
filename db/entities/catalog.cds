@@ -9,6 +9,13 @@ entity Categories : cuid, managed {
     Name        : String(60) @mandatory;
     Description : String(255);
     Active      : Boolean default true;
+
+    @Core.MediaType  : CategoryImageType
+    CategoryImage    : LargeBinary @stream;
+
+    @Core.IsMediaType: true
+    CategoryImageType : String(50);
+
     Products    : Association to many Products
                       on Products.Category = $self;
 }
@@ -27,6 +34,8 @@ entity Products : cuid, managed {
                       on Images.Product = $self;
     Variants    : Composition of many ProductVariants
                       on Variants.Product = $self;
+    Measurements : Composition of many ProductMeasurements
+                      on Measurements.Product = $self;
 }
 
 entity ProductColors : cuid {
@@ -53,4 +62,12 @@ entity ProductVariants : cuid {
     Size        : String(10) @mandatory;
     Stock       : Integer default 0;
     StockOnEdit : Integer;
+}
+
+entity ProductMeasurements : cuid {
+    Product   : Association to Products;
+    Size      : String(40) @mandatory;
+    Label     : String(40) @mandatory;
+    Value     : String(40);
+    SortOrder : Integer default 0;
 }

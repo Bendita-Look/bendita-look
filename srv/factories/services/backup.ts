@@ -10,12 +10,16 @@ import { oOrderRepositoryFactory } from '../repositories/order';
 import { oOrderItemRepositoryFactory } from '../repositories/order-item';
 import { oStoreSettingsRepositoryFactory } from '../repositories/store-settings';
 import { oEmailServerRepositoryFactory } from '../repositories/email-server';
+import { oStorePolicyRepositoryFactory } from '../repositories/store-policy';
 import { oPromotionRepositoryFactory } from '../repositories/promotion';
 import { oOrderPromotionRepositoryFactory } from '../repositories/order-promotion';
 import { oOrderReturnRepositoryFactory } from '../repositories/order-return';
 import { oOrderReturnItemRepositoryFactory } from '../repositories/order-return-item';
 import { oStockEntryRepositoryFactory } from '../repositories/stock-entry';
 import { oStockEntryItemRepositoryFactory } from '../repositories/stock-entry-item';
+import { oSubscriberRepositoryFactory } from '../repositories/subscriber';
+import { oNewsletterCampaignRepositoryFactory } from '../repositories/newsletter-campaign';
+import { oPushSubscriptionRepositoryFactory } from '../repositories/push-subscription';
 
 const makeBackupService = (): BackupService => {
 
@@ -38,7 +42,11 @@ const makeBackupService = (): BackupService => {
             { name: 'StockEntries', repository: oStockEntryRepositoryFactory },
             { name: 'StockEntryItems', repository: oStockEntryItemRepositoryFactory },
             { name: 'StoreSettings', repository: oStoreSettingsRepositoryFactory, overwriteExisting: true },
-            { name: 'EmailServers', repository: oEmailServerRepositoryFactory }
+            { name: 'EmailServers', repository: oEmailServerRepositoryFactory },
+            { name: 'StorePolicies', repository: oStorePolicyRepositoryFactory },
+            { name: 'Subscribers', repository: oSubscriberRepositoryFactory },
+            { name: 'NewsletterCampaigns', repository: oNewsletterCampaignRepositoryFactory },
+            { name: 'PushSubscriptions', repository: oPushSubscriptionRepositoryFactory }
         ]
     );
 

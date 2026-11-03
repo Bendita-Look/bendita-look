@@ -10,6 +10,8 @@ import { oReportRouteFactory } from './report';
 import { oStoreSettingsRouteFactory } from './store-settings';
 import { oEmailServerRouteFactory } from './email-server';
 import { oPromotionRouteFactory } from './promotion';
+import { oNewsletterRouteFactory } from './newsletter';
+import { oPushRouteFactory } from './push';
 
 const makeMainRoute = (): MainRoute => {
 
@@ -23,7 +25,9 @@ const makeMainRoute = (): MainRoute => {
         oReportRouteFactory,
         oStoreSettingsRouteFactory,
         oEmailServerRouteFactory,
-        oPromotionRouteFactory
+        oPromotionRouteFactory,
+        oNewsletterRouteFactory,
+        oPushRouteFactory
     ]);
 
 };

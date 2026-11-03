@@ -20,13 +20,16 @@ import {
     OrderChannel,
     OrderStatus
 } from '@/constants/order-status';
+import { ORDER_LIMITS } from '@/constants/order-limits';
 import { CouponStatus } from '@/constants/promotions';
 import { OrderAddress, OrderDelivery, OrderModel } from '@/models/order';
 import { OrderItemModel } from '@/models/order-item';
+import { OrderReturnItemModel } from '@/models/order-return-item';
 import { OrderRepository } from '@/repositories/order';
 import { ProductVariantRepository } from '@/repositories/product-variant';
 import { PromotionRepository } from '@/repositories/promotion';
 import { NotificationService } from '@/services/notification';
+import { PushService } from '@/services/push';
 import { PricedLine, PricingService, PriceQuote } from '@/services/pricing';
 import { RateLimiter } from '@/infrastructure/RateLimiter';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
@@ -57,6 +60,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
         private readonly Builder: OrderBuilder,
         private readonly PricingService: PricingService,
         private readonly NotificationService: NotificationService,
+        private readonly PushService: PushService,
         private readonly RateLimiter: RateLimiter,
         private readonly InputValidator: OrderInputValidator = new OrderInputValidator()
     ) {
@@ -80,16 +84,19 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
         return this.execute(async () => {
 
-            const oCreated = await this.createOrder({ ...oValidation.value, Channel: OrderChannel.Online, Status: OrderStatus.New });
+            const oResult = await this.createOrder({ ...oValidation.value, Channel: OrderChannel.Online, Status: OrderStatus.New });
 
-            if (oCreated.isLeft()) {
-                return left(oCreated.value);
+            if (oResult.isLeft()) {
+                return left(oResult.value);
             }
 
-            const oOrder = oCreated.value;
+            const oOrder = oResult.value;
             const sLocale = ServiceLocator.getLocale();
 
-            ServiceLocator.afterCommit(() => this.NotificationService.sendOrderCreated(oOrder, sLocale));
+            ServiceLocator.afterCommit(async () => {
+                this.NotificationService.sendOrderCreated(oOrder, sLocale);
+                await this.PushService.notifyNewOrder(oOrder, sLocale);
+            });
 
             return right({ Number: oOrder.Number, AccessCode: oOrder.AccessCode });
 
@@ -219,6 +226,33 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
             if (oUpdatedOrder.CustomerEmail) {
                 ServiceLocator.afterCommit(() => this.NotificationService.sendOrderStatusChanged(oUpdatedOrder, sLocale));
+            }
+
+            return right(true);
+
+        });
+
+    }
+
+
+    public async deleteOrders(OrderIds: string[], RestoreStock: boolean): Promise<Either<AbstractError, boolean>> {
+
+        const oIds = this.validateOrderIds(OrderIds);
+
+        if (oIds.isLeft()) {
+            return left(oIds.value);
+        }
+
+        return this.execute(async () => {
+
+            const oOrders = await this.findOrdersToDelete(oIds.value);
+
+            if (oOrders.isLeft()) {
+                return left(oOrders.value);
+            }
+
+            for (const oOrder of oOrders.value) {
+                await this.removeOrder(oOrder, RestoreStock);
             }
 
             return right(true);
@@ -375,8 +409,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
         const oDeltas = new Map<string, number>();
 
-        Current.forEach((oItem) => oDeltas.set(oItem.VariantId, (oDeltas.get(oItem.VariantId) ?? 0) - oItem.Quantity));
-        Lines.forEach((oLine) => oDeltas.set(oLine.variant.Id, (oDeltas.get(oLine.variant.Id) ?? 0) + oLine.quantity));
+        Current.forEach((oItem) => this.addDelta(oDeltas, oItem.VariantId, -oItem.Quantity));
+        Lines.forEach((oLine) => this.addDelta(oDeltas, oLine.variant.Id, oLine.quantity));
 
         for (const [sVariantId, iDelta] of oDeltas) {
 
@@ -552,6 +586,109 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
             if (oItem.VariantId) {
                 await this.VariantRepository.increaseStock(oItem.VariantId, oItem.Quantity);
+            }
+
+        }
+
+    }
+
+
+    private validateOrderIds(OrderIds: string[]): Either<AbstractError, string[]> {
+
+        const aOrderIds = [...new Set(OrderIds)];
+
+        if (!aOrderIds.length) {
+            return left(new ValidationError('error.orderIdsRequired'));
+        }
+
+        if (aOrderIds.length > ORDER_LIMITS.maxOrdersPerDelete) {
+            return left(new ValidationError('error.tooManyOrdersToDelete', { max: ORDER_LIMITS.maxOrdersPerDelete }));
+        }
+
+        return right(aOrderIds);
+
+    }
+
+
+    private async findOrdersToDelete(OrderIds: string[]): Promise<Either<AbstractError, OrderModel[]>> {
+
+        const aOrders: OrderModel[] = [];
+
+        for (const sOrderId of OrderIds) {
+
+            const oOrder = await this.Repository.findWithItemsById(sOrderId);
+
+            if (!oOrder) {
+                return left(new NotFoundError('error.orderNotFound'));
+            }
+
+            aOrders.push(oOrder);
+
+        }
+
+        return right(aOrders);
+
+    }
+
+
+    private async removeOrder(Order: OrderModel, RestoreStock: boolean): Promise<void> {
+
+        if (Order.Status !== OrderStatus.Cancelled) {
+
+            await this.releaseCoupon(Order);
+
+            if (RestoreStock) {
+                await this.applyStockDeltas(this.stockDeltas(Order));
+            }
+
+        }
+
+        await this.Repository.deleteCascade(Order.Id);
+
+    }
+
+
+    private stockDeltas(Order: OrderModel): Map<string, number> {
+
+        const oDeltas = new Map<string, number>();
+
+        Order.Items.forEach((oItem) => this.addDelta(oDeltas, oItem.VariantId, oItem.Quantity));
+        Order.Returns
+            .flatMap((oReturn) => oReturn.Items)
+            .forEach((oItem) => this.addDelta(oDeltas, oItem.VariantId, this.returnItemStockDelta(oItem)));
+
+        return oDeltas;
+
+    }
+
+
+    private returnItemStockDelta(Item: OrderReturnItemModel): number {
+
+        if (!Item.IsReturned) {
+            return Item.Quantity;
+        }
+
+        return Item.Restock ? -Item.Quantity : 0;
+
+    }
+
+
+    private addDelta(Deltas: Map<string, number>, VariantId: string | undefined, Delta: number): void {
+
+        if (VariantId) {
+            Deltas.set(VariantId, (Deltas.get(VariantId) ?? 0) + Delta);
+        }
+
+    }
+
+
+    private async applyStockDeltas(Deltas: Map<string, number>): Promise<void> {
+
+        // Saldo negativo não ocorre num pedido apagado: só a devolução ao estoque precisa ser aplicada.
+        for (const [sVariantId, iDelta] of Deltas) {
+
+            if (iDelta > 0) {
+                await this.VariantRepository.increaseStock(sVariantId, iDelta);
             }
 
         }

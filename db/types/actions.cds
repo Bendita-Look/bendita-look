@@ -246,3 +246,31 @@ type SalesReport {
     TopReturned     : many ProductSales;
     TopCategories   : many CategorySales;
 }
+
+type NewsletterSubscribeInput {
+    Name  : String(120);
+    Email : String(120);
+}
+
+type NewsletterSubscribeResult {
+    Subscribed : Boolean;
+    AlreadySubscribed : Boolean;
+    Message : String(255);
+}
+
+type NewsletterUnsubscribeResult {
+    Unsubscribed : Boolean;
+    Message      : String(255);
+}
+
+type NewsletterSendInput {
+    Subject : String(160);
+    Body    : LargeString;
+}
+
+type NewsletterSendResult {
+    Sent      : Boolean;
+    Recipients : Integer;
+    Message   : String(255);
+}
+

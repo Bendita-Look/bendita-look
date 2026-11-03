@@ -9,6 +9,7 @@ import { oPromotionRepositoryFactory } from '../repositories/promotion';
 import { oProductImageRepositoryFactory } from '../repositories/product-image';
 import { oPricingServiceFactory } from './pricing';
 import { oNotificationServiceFactory } from './notification';
+import { oPushServiceFactory } from './push';
 
 const makeOrderService = (): OrderService => {
 
@@ -19,6 +20,7 @@ const makeOrderService = (): OrderService => {
         new OrderBuilder(oProductImageRepositoryFactory),
         oPricingServiceFactory,
         oNotificationServiceFactory,
+        oPushServiceFactory,
         new RateLimiter(ORDER_LIMITS.maxOrdersPerWindow, ORDER_LIMITS.windowInMinutes)
     );
 

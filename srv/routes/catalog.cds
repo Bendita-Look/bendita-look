@@ -10,6 +10,8 @@ service Catalog {
             ID,
             Name,
             Description,
+            CategoryImage,
+            CategoryImageType,
             Products
         }
         where
@@ -27,6 +29,7 @@ service Catalog {
             Colors,
             Images,
             Variants,
+            Measurements,
             createdAt,
             case
                 when exists Variants[Stock > 0]
@@ -52,6 +55,19 @@ service Catalog {
         };
 
     @readonly
+    entity StorePolicies   as
+        projection on entities.StorePolicies {
+            ID,
+            Type,
+            Title,
+            Slug,
+            Content,
+            SortOrder
+        }
+        where
+            Active = true;
+
+    @readonly
     entity ProductVariants as projection on entities.ProductVariants excluding {
         StockOnEdit
     };
@@ -66,5 +82,9 @@ service Catalog {
 
     action   QuoteOrder(Items: many entities.OrderItemInput,
                         CouponCode: String(20))                   returns entities.OrderQuote;
+
+    action   Subscribe(Input: entities.NewsletterSubscribeInput)   returns entities.NewsletterSubscribeResult;
+
+    action   Unsubscribe(Token: String(64))                        returns entities.NewsletterUnsubscribeResult;
 
 }

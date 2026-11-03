@@ -16,6 +16,8 @@ service BenditaLook {
 
     entity ProductVariants as projection on entities.ProductVariants;
 
+    entity ProductMeasurements as projection on entities.ProductMeasurements;
+
     @readonly
     entity Orders          as projection on entities.Orders excluding {
         AccessCode
@@ -50,9 +52,20 @@ service BenditaLook {
     @Capabilities.DeleteRestrictions.Deletable : false
     entity StoreSettings   as projection on entities.StoreSettings;
 
+    @odata.draft.enabled
+    entity StorePolicies   as projection on entities.StorePolicies;
+
+    entity Subscribers     as projection on entities.Subscribers;
+
+    @odata.draft.enabled
+    entity NewsletterCampaigns as projection on entities.NewsletterCampaigns;
+
     action ChangeOrderStatus(OrderId: UUID,
                              Status: entities.OrderStatus,
                              Delivery: entities.DeliveryInput)            returns entities.ActionResult;
+
+    action DeleteOrders(OrderIds: many UUID,
+                        RestoreStock: Boolean)                            returns entities.ActionResult;
 
     action RegisterStoreSale(Sale: entities.StoreSaleInput)                returns entities.SubmitOrderResult;
 
@@ -77,6 +90,22 @@ service BenditaLook {
     action RemoveEmailServer()                                            returns entities.ActionResult;
 
     action SendTestEmail(Recipient: String(120))                          returns entities.ActionResult;
+
+    action SendNewsletter(Campaign: entities.NewsletterSendInput)         returns entities.NewsletterSendResult;
+
+    @readonly
+    entity PushSubscriptions as projection on entities.PushSubscriptions;
+
+    function PushPublicKey()                                                returns String(500);
+
+    action SubscribePush(Endpoint: String(500),
+                         P256dh: String(200),
+                         Auth: String(100),
+                         UserAgent: String(255))                             returns entities.ActionResult;
+
+    action UnsubscribePush(Endpoint: String(500))                          returns entities.ActionResult;
+
+    action SendPushTest()                                                  returns entities.ActionResult;
 
     function EmailServer()                                                returns entities.EmailServerInfo;
 
