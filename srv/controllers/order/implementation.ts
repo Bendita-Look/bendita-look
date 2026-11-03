@@ -48,6 +48,13 @@ export class OrderControllerImplementation extends BaseControllerImplementation<
     }
 
 
+    public async deleteOrders(OrderIds: string[], RestoreStock: boolean): Promise<BaseControllerResponse> {
+
+        return this.respond(await this.Service.deleteOrders(OrderIds, RestoreStock), 200);
+
+    }
+
+
     public async trackingUrl(OrderId: string): Promise<BaseControllerResponse> {
 
         return this.respond(await this.Service.trackingUrl(OrderId), 200);

@@ -64,6 +64,9 @@ service BenditaLook {
                              Status: entities.OrderStatus,
                              Delivery: entities.DeliveryInput)            returns entities.ActionResult;
 
+    action DeleteOrders(OrderIds: many UUID,
+                        RestoreStock: Boolean)                            returns entities.ActionResult;
+
     action RegisterStoreSale(Sale: entities.StoreSaleInput)                returns entities.SubmitOrderResult;
 
     action QuoteOrderUpdate(OrderId: UUID,
@@ -89,6 +92,20 @@ service BenditaLook {
     action SendTestEmail(Recipient: String(120))                          returns entities.ActionResult;
 
     action SendNewsletter(Campaign: entities.NewsletterSendInput)         returns entities.NewsletterSendResult;
+
+    @readonly
+    entity PushSubscriptions as projection on entities.PushSubscriptions;
+
+    function PushPublicKey()                                                returns String(500);
+
+    action SubscribePush(Endpoint: String(500),
+                         P256dh: String(200),
+                         Auth: String(100),
+                         UserAgent: String(255))                             returns entities.ActionResult;
+
+    action UnsubscribePush(Endpoint: String(500))                          returns entities.ActionResult;
+
+    action SendPushTest()                                                  returns entities.ActionResult;
 
     function EmailServer()                                                returns entities.EmailServerInfo;
 

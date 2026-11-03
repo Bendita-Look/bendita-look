@@ -11,6 +11,7 @@ import { oStoreSettingsRouteFactory } from './store-settings';
 import { oEmailServerRouteFactory } from './email-server';
 import { oPromotionRouteFactory } from './promotion';
 import { oNewsletterRouteFactory } from './newsletter';
+import { oPushRouteFactory } from './push';
 
 const makeMainRoute = (): MainRoute => {
 
@@ -25,7 +26,8 @@ const makeMainRoute = (): MainRoute => {
         oStoreSettingsRouteFactory,
         oEmailServerRouteFactory,
         oPromotionRouteFactory,
-        oNewsletterRouteFactory
+        oNewsletterRouteFactory,
+        oPushRouteFactory
     ]);
 
 };

@@ -12,4 +12,5 @@ export interface OrderRepository extends BaseRepository<OrderModel> {
     updateStatus(Id: string, Status: OrderStatus, Delivery?: OrderDelivery): Promise<void>;
     replaceItems(Order: OrderModel): Promise<void>;
     addReturnTotals(Id: string, Refund: Decimal, Exchange: Decimal): Promise<void>;
+    deleteCascade(Id: string): Promise<void>;
 }

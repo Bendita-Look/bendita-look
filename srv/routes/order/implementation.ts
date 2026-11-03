@@ -17,6 +17,8 @@ export class OrderRouteImplementation extends BaseRouteImplementation<Order> imp
 
         Service.on('ChangeOrderStatus', this.changeOrderStatus.bind(this));
 
+        Service.on('DeleteOrders', this.deleteOrders.bind(this));
+
         Service.on('RegisterStoreSale', this.registerStoreSale.bind(this));
 
         Service.on('QuoteOrderUpdate', this.quoteOrderUpdate.bind(this));
@@ -52,6 +54,17 @@ export class OrderRouteImplementation extends BaseRouteImplementation<Order> imp
     private async registerStoreSale(Request: Request): Promise<unknown> {
 
         return this.resultOf(Request, await this.Controller.registerStoreSale(Request.data.Sale));
+
+    }
+
+
+    private async deleteOrders(Request: Request): Promise<unknown> {
+
+        const oResult = await this.Controller.deleteOrders(Request.data.OrderIds ?? [], Request.data.RestoreStock !== false);
+
+        this.rejectOnError(Request, oResult);
+
+        return { success: true, data: '' };
 
     }
 

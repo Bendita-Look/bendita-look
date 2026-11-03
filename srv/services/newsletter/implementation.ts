@@ -255,7 +255,7 @@ export class NewsletterServiceImplementation extends BaseServiceImplementation<S
 
         const sBase = (Settings.StoreUrl ?? '').replace(/\/+$/, '');
 
-        return `${sBase}/${UNSUBSCRIBE_PATH}/${encodeURIComponent(Token)}`;
+        return `${sBase}/#/${UNSUBSCRIBE_PATH}/${encodeURIComponent(Token)}`;
 
     }
 
