@@ -4,6 +4,7 @@ import { OrderController } from '@/controllers/order';
 import { StoreSettingsRoute } from '@/routes/store-settings/index';
 import { PromotionRoute } from '@/routes/promotion/index';
 import { NewsletterRoute } from '@/routes/newsletter/index';
+import { PushRoute } from '@/routes/push/index';
 import { CatalogRoute } from './protocols';
 import { BaseRouteImplementation } from '../base/implementation';
 
@@ -13,7 +14,8 @@ export class CatalogRouteImplementation extends BaseRouteImplementation<Order> i
         protected readonly Controller: OrderController,
         private readonly StoreSettingsRoute: StoreSettingsRoute,
         private readonly PromotionRoute: PromotionRoute,
-        private readonly NewsletterRoute: NewsletterRoute
+        private readonly NewsletterRoute: NewsletterRoute,
+        private readonly PushRoute: PushRoute
     ) {
 
         super();
@@ -40,6 +42,8 @@ export class CatalogRouteImplementation extends BaseRouteImplementation<Order> i
         this.PromotionRoute.catalog(Service);
 
         this.NewsletterRoute.catalog(Service);
+
+        this.PushRoute.catalog(Service);
 
     }
 

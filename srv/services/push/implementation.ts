@@ -2,25 +2,44 @@ import webpush from 'web-push';
 import cds, { User } from '@sap/cds';
 import {
     ActionResult,
+    OrderRef,
     PushSubscription
 } from '@models/apps/dflc/benditalook/entities';
 import { Either, left, right } from '@sweet-monads/either';
-import { AbstractError, ValidationError } from '@/errors';
+import { AbstractError, TooManyRequestsError, ValidationError } from '@/errors';
+import { ORDER_LIMITS } from '@/constants/order-limits';
+import { OrderStatus } from '@/constants/order-status';
 import { Messages } from '@/infrastructure/Messages';
+import { RateLimiter } from '@/infrastructure/RateLimiter';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
 import { StoreUrl } from '@/infrastructure/StoreUrl';
+import { CustomerPushDeviceModel } from '@/models/customer-push-device';
 import { OrderModel } from '@/models/order';
 import { PushSubscriptionModel } from '@/models/push-subscription';
+import { CustomerPushDeviceRepository } from '@/repositories/customer-push-device';
+import { CustomerPushOrderRepository } from '@/repositories/customer-push-order';
+import { OrderRepository } from '@/repositories/order';
 import { PushSubscriptionRepository } from '@/repositories/push-subscription';
+import { OrderRefs } from '@/services/order/order-refs';
 import { StoreSettingsService } from '@/services/store-settings';
-import { PushService, PushSubscriptionInput } from './protocols';
+import { OrderPushSubscriptionInput, PushService, PushSubscriptionInput } from './protocols';
 import { BaseServiceImplementation } from '../base/implementation';
+
+type WebPushSubscription = Parameters<typeof webpush.sendNotification>[0];
+
+type PushTarget = {
+    Endpoint: string;
+    toWebPushSubscription(): WebPushSubscription;
+};
 
 const DEFAULT_VAPID_SUBJECT = 'mailto:contato@benditalook.com';
 const ADMIN_ORDERS_PATH = 'admin/orders';
 const TEST_PATH = 'admin';
+const ORDER_PATH = 'order';
 const SEND_OPTIONS: webpush.RequestOptions = { TTL: 3600, urgency: 'high', timeout: 5000 };
 const UNUSABLE_SUBSCRIPTION_STATUSES = [404, 410];
+const CUSTOMER_NOTIFIED_STATUSES = [OrderStatus.InService, OrderStatus.OutForDelivery, OrderStatus.Completed, OrderStatus.Cancelled];
+const FINISHED_ORDER_STATUSES = [OrderStatus.Completed, OrderStatus.Cancelled];
 
 export class PushServiceImplementation extends BaseServiceImplementation<PushSubscription> implements PushService {
 
@@ -28,7 +47,11 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
 
     constructor(
         private readonly Repository: PushSubscriptionRepository,
-        private readonly Settings: StoreSettingsService
+        private readonly DeviceRepository: CustomerPushDeviceRepository,
+        private readonly OrderLinkRepository: CustomerPushOrderRepository,
+        private readonly OrderRepository: OrderRepository,
+        private readonly Settings: StoreSettingsService,
+        private readonly OrderPushLimiter: RateLimiter
     ) {
 
         super();
@@ -136,7 +159,7 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
                 body: Messages.text('push.testBody', Locale),
                 tag: 'bendita-look-test',
                 url: sUrl
-            });
+            }, (sEndpoint) => this.Repository.deactivate(sEndpoint));
 
             return right({ success: true, data: Messages.text('push.testSent', Locale, { count: iSent }) });
 
@@ -169,7 +192,7 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
                 body: sBody,
                 tag: `order-${Order.Id}`,
                 url: sUrl
-            });
+            }, (sEndpoint) => this.Repository.deactivate(sEndpoint));
 
         } catch (oError) {
 
@@ -180,7 +203,155 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
     }
 
 
-    private async sendToAll(Subscriptions: PushSubscriptionModel[], Payload: object | string): Promise<number> {
+    public async subscribeOrders(Input: OrderPushSubscriptionInput, Locale: string | undefined): Promise<Either<AbstractError, ActionResult>> {
+
+        const sEndpoint = (Input?.Endpoint ?? '').trim();
+        const sP256dh = (Input?.P256dh ?? '').trim();
+        const sAuth = (Input?.Auth ?? '').trim();
+
+        if (this.isBlank(sEndpoint) || this.isBlank(sP256dh) || this.isBlank(sAuth) || !this.isHttpsUrl(sEndpoint)) {
+            return left(new ValidationError('error.invalidPushSubscription'));
+        }
+
+        if (!this.vapidConfigured) {
+            return left(new ValidationError('error.pushNotConfigured'));
+        }
+
+        const aOrders = Input?.Orders ?? [];
+
+        if (aOrders.length > ORDER_LIMITS.maxOrdersPerLookup) {
+            return left(new ValidationError('error.tooManyOrderRefs', { max: ORDER_LIMITS.maxOrdersPerLookup }));
+        }
+
+        if (!this.OrderPushLimiter.tryConsume(ServiceLocator.getClientIp())) {
+            return left(new TooManyRequestsError('error.tooManyOrderPushRequests'));
+        }
+
+        return this.execute<ActionResult>(async () => {
+
+            const aOrderIds = await this.findTrackableOrderIds(aOrders);
+            const sDeviceId = await this.saveDevice(sEndpoint, sP256dh, sAuth, Locale);
+
+            await this.OrderLinkRepository.replaceForDevice(sDeviceId, aOrderIds);
+
+            return right({ success: true, data: Messages.text('push.orderSubscribed', Locale) });
+
+        });
+
+    }
+
+
+    public async unsubscribeOrders(Endpoint: string): Promise<Either<AbstractError, ActionResult>> {
+
+        if (this.isBlank(Endpoint)) {
+            return left(new ValidationError('error.invalidPushSubscription'));
+        }
+
+        return this.execute<ActionResult>(async () => {
+
+            await this.DeviceRepository.removeByEndpoint(Endpoint.trim());
+
+            return right({ success: true, data: Messages.text('push.orderUnsubscribed', ServiceLocator.getLocale()) });
+
+        });
+
+    }
+
+
+    public async notifyOrderStatus(Order: OrderModel): Promise<void> {
+
+        if (!this.vapidConfigured || !CUSTOMER_NOTIFIED_STATUSES.includes(Order.Status)) {
+            return;
+        }
+
+        try {
+
+            await this.sendOrderStatus(Order);
+
+            if (FINISHED_ORDER_STATUSES.includes(Order.Status)) {
+                await this.OrderLinkRepository.removeByOrder(Order.Id);
+                await this.DeviceRepository.removeOrphans();
+            }
+
+        } catch (oError) {
+
+            cds.log('push').error('Falha ao enviar push de status do pedido.', oError);
+
+        }
+
+    }
+
+
+    public async forgetOrder(OrderId: string): Promise<void> {
+
+        await this.OrderLinkRepository.removeByOrder(OrderId);
+
+    }
+
+
+    private async findTrackableOrderIds(Orders: OrderRef[]): Promise<string[]> {
+
+        const aRefs = OrderRefs.normalize(Orders);
+        const aOrders = await this.OrderRepository.findIdentitiesByNumbers(aRefs.map((oRef) => oRef.Number));
+
+        return aOrders
+            .filter((oOrder) => OrderRefs.matches(aRefs, oOrder) && !FINISHED_ORDER_STATUSES.includes(oOrder.Status))
+            .map((oOrder) => oOrder.ID);
+
+    }
+
+
+    private async saveDevice(Endpoint: string, P256dh: string, Auth: string, Locale: string | undefined): Promise<string> {
+
+        const oExisting = await this.DeviceRepository.findByEndpoint(Endpoint);
+
+        const oModel = CustomerPushDeviceModel.with({
+            Id: oExisting?.Id ?? this.generateUUID(),
+            Endpoint,
+            P256dh,
+            Auth,
+            Locale: Locale?.slice(0, 10)
+        });
+
+        await this.DeviceRepository.upsertEntries([oModel.toEntityObject()]);
+
+        return oModel.Id;
+
+    }
+
+
+    private async sendOrderStatus(Order: OrderModel): Promise<void> {
+
+        const aDevices = await this.DeviceRepository.findByOrder(Order.Id);
+
+        if (!aDevices.length) {
+            return;
+        }
+
+        const sUrl = await this.buildUrl(`${ORDER_PATH}/${Order.Number}/${Order.AccessCode}`);
+
+        for (const oDevice of aDevices) {
+
+            await this.sendToAll([oDevice], this.orderStatusPayload(Order, oDevice.Locale, sUrl), (sEndpoint) => this.DeviceRepository.removeByEndpoint(sEndpoint));
+
+        }
+
+    }
+
+
+    private orderStatusPayload(Order: OrderModel, Locale: string | undefined, Url: string): object {
+
+        return {
+            title: Messages.text('push.orderStatusTitle', Locale, { number: Order.Number }),
+            body: Messages.text(`push.orderStatus.${Order.Status}`, Locale),
+            tag: `order-status-${Order.Id}`,
+            url: Url
+        };
+
+    }
+
+
+    private async sendToAll(Subscriptions: PushTarget[], Payload: object | string, OnUnusable: (Endpoint: string) => Promise<void>): Promise<number> {
 
         const sBody = typeof Payload === 'string' ? Payload : JSON.stringify(Payload);
         let iSent = 0;
@@ -198,7 +369,7 @@ export class PushServiceImplementation extends BaseServiceImplementation<PushSub
 
                 if (iStatus !== undefined && UNUSABLE_SUBSCRIPTION_STATUSES.includes(iStatus)) {
 
-                    await this.Repository.deactivate(oSubscription.Endpoint);
+                    await OnUnusable(oSubscription.Endpoint);
 
                 } else {
 

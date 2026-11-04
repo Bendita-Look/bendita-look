@@ -21,6 +21,8 @@ import { oStockEntryItemRepositoryFactory } from '../repositories/stock-entry-it
 import { oSubscriberRepositoryFactory } from '../repositories/subscriber';
 import { oNewsletterCampaignRepositoryFactory } from '../repositories/newsletter-campaign';
 import { oPushSubscriptionRepositoryFactory } from '../repositories/push-subscription';
+import { oCustomerPushDeviceRepositoryFactory } from '../repositories/customer-push-device';
+import { oCustomerPushOrderRepositoryFactory } from '../repositories/customer-push-order';
 
 const makeBackupService = (): BackupService => {
 
@@ -49,7 +51,9 @@ const makeBackupService = (): BackupService => {
             { name: 'StorePolicies', repository: oStorePolicyRepositoryFactory },
             { name: 'Subscribers', repository: oSubscriberRepositoryFactory },
             { name: 'NewsletterCampaigns', repository: oNewsletterCampaignRepositoryFactory },
-            { name: 'PushSubscriptions', repository: oPushSubscriptionRepositoryFactory }
+            { name: 'PushSubscriptions', repository: oPushSubscriptionRepositoryFactory },
+            { name: 'CustomerPushDevices', repository: oCustomerPushDeviceRepositoryFactory },
+            { name: 'CustomerPushOrders', repository: oCustomerPushOrderRepositoryFactory }
         ]
     );
 

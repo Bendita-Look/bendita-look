@@ -91,4 +91,13 @@ service Catalog {
 
     action   Unsubscribe(Token: String(64))                        returns entities.NewsletterUnsubscribeResult;
 
+    function PushPublicKey()                                          returns String(500);
+
+    action   SubscribeOrdersPush(Endpoint: String(500),
+                                 P256dh: String(200),
+                                 Auth: String(100),
+                                 Orders: many entities.OrderRef)      returns entities.ActionResult;
+
+    action   UnsubscribeOrdersPush(Endpoint: String(500))             returns entities.ActionResult;
+
 }

@@ -1,8 +1,9 @@
 import { ApplicationService, Request } from '@sap/cds';
 import { PushController } from '@/controllers/push';
+import { PushRoute } from './protocols';
 import { BaseRouteImplementation } from '../base/implementation';
 
-export class PushRouteImplementation extends BaseRouteImplementation<unknown> {
+export class PushRouteImplementation extends BaseRouteImplementation<unknown> implements PushRoute {
 
     constructor(protected readonly Controller: PushController) {
 
@@ -17,6 +18,15 @@ export class PushRouteImplementation extends BaseRouteImplementation<unknown> {
         Service.on('SubscribePush', this.subscribe.bind(this));
         Service.on('UnsubscribePush', this.unsubscribe.bind(this));
         Service.on('SendPushTest', this.sendTest.bind(this));
+
+    }
+
+
+    public catalog(Service: ApplicationService): void {
+
+        Service.on('PushPublicKey', this.publicKey.bind(this));
+        Service.on('SubscribeOrdersPush', this.subscribeOrders.bind(this));
+        Service.on('UnsubscribeOrdersPush', this.unsubscribeOrders.bind(this));
 
     }
 
@@ -50,6 +60,25 @@ export class PushRouteImplementation extends BaseRouteImplementation<unknown> {
     private async sendTest(Request: Request): Promise<unknown> {
 
         return this.resultOf(Request, await this.Controller.sendTest(Request.locale));
+
+    }
+
+
+    private async subscribeOrders(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.subscribeOrders({
+            Endpoint: Request.data.Endpoint,
+            P256dh: Request.data.P256dh,
+            Auth: Request.data.Auth,
+            Orders: Request.data.Orders
+        }, Request.locale));
+
+    }
+
+
+    private async unsubscribeOrders(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.unsubscribeOrders(Request.data.Endpoint));
 
     }
 

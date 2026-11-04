@@ -4,7 +4,7 @@ import { OrderSummary } from '@models/apps/dflc/benditalook/entities';
 import { OrderDelivery, OrderModel } from '@/models/order';
 import { OrderStatus } from '@/constants/order-status';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
-import { OrderRepository } from './protocols';
+import { OrderIdentity, OrderRepository } from './protocols';
 import { BaseRepositoryImplementation } from '../base/implementation';
 
 type OrderSummaryRow = Omit<OrderSummary, 'ItemCount'> & { ID: string };
@@ -65,6 +65,21 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
         );
 
         return this.withItemCounts(aRows);
+
+    }
+
+
+    public async findIdentitiesByNumbers(Numbers: number[]): Promise<OrderIdentity[]> {
+
+        if (!Numbers.length) {
+            return [];
+        }
+
+        return cds.run(
+            SELECT.from(this.getEntity())
+                .columns('ID', 'Number', 'AccessCode', 'Status')
+                .where({ Number: { in: Numbers } })
+        );
 
     }
 

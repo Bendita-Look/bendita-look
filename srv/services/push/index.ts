@@ -1,1 +1,1 @@
-export type { PushService, PushSubscriptionInput } from './protocols';
+export type { OrderPushSubscriptionInput, PushService, PushSubscriptionInput } from './protocols';

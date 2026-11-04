@@ -65,3 +65,34 @@ Accept-Language: pt-BR
 {
   "Email": "cliente@exemplo.com"
 }
+
+
+### Chave publica VAPID para o navegador se inscrever no Web Push
+# @name PushPublicKey
+GET {{catalog}}/PushPublicKey()
+
+
+### Avisos de status dos pedidos no aparelho (precisa do par Number + AccessCode)
+# @name SubscribeOrdersPush
+POST {{catalog}}/SubscribeOrdersPush
+Content-Type: application/json
+Accept-Language: pt-BR
+
+{
+  "Endpoint": "https://fcm.googleapis.com/fcm/send/exemplo",
+  "P256dh": "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM=",
+  "Auth": "tBHItJI5svbpez7KI4CCXg==",
+  "Orders": [
+    { "Number": {{orderNumber}}, "AccessCode": "{{accessCode}}" }
+  ]
+}
+
+
+### Desativar avisos dos pedidos neste aparelho
+# @name UnsubscribeOrdersPush
+POST {{catalog}}/UnsubscribeOrdersPush
+Content-Type: application/json
+
+{
+  "Endpoint": "https://fcm.googleapis.com/fcm/send/exemplo"
+}

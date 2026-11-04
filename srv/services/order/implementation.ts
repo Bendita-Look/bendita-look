@@ -38,6 +38,7 @@ import { RateLimiter } from '@/infrastructure/RateLimiter';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
 import { Messages } from '@/infrastructure/Messages';
 import { OrderInputValidator, RequestedItem } from './input-validator';
+import { OrderRefs } from './order-refs';
 import { OrderBuilder } from './order-builder';
 import { OrderService } from './protocols';
 import { BaseServiceImplementation } from '../base/implementation';
@@ -53,8 +54,6 @@ type NewOrder = OrderAddress & {
     CouponCode?: string;
     Items: RequestedItem[];
 };
-
-type OrderLookupRef = { Number: number; AccessCode: string };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 120;
@@ -198,14 +197,14 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             return left(new ValidationError('error.tooManyOrderRefs', { max: ORDER_LIMITS.maxOrdersPerLookup }));
         }
 
-        const aRefs = this.normalizeOrderRefs(Orders);
+        const aRefs = OrderRefs.normalize(Orders);
 
         return this.execute(async () => {
 
             const aOrders = await this.Repository.findSummariesByNumbers(aRefs.map((oRef) => oRef.Number));
 
             return right(aOrders
-                .filter((oOrder) => aRefs.some((oRef) => oRef.Number === oOrder.Number && oRef.AccessCode === oOrder.AccessCode))
+                .filter((oOrder) => OrderRefs.matches(aRefs, oOrder))
                 .sort((oA, oB) => (oB.createdAt ?? '').localeCompare(oA.createdAt ?? '')));
 
         });
@@ -290,6 +289,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             if (oUpdatedOrder.CustomerEmail) {
                 ServiceLocator.afterCommit(() => this.NotificationService.sendOrderStatusChanged(oUpdatedOrder, sLocale));
             }
+
+            ServiceLocator.afterCommit(() => this.PushService.notifyOrderStatus(oUpdatedOrder));
 
             return right(true);
 
@@ -706,6 +707,8 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
 
         }
 
+        await this.PushService.forgetOrder(Order.Id);
+
         await this.Repository.deleteCascade(Order.Id);
 
     }
@@ -807,26 +810,6 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 }))
             }))
         };
-
-    }
-
-
-    private normalizeOrderRefs(Orders: OrderRef[]): OrderLookupRef[] {
-
-        const oRefs = new Map<string, OrderLookupRef>();
-
-        for (const oRef of Orders) {
-
-            const iNumber = oRef?.Number ?? 0;
-            const sAccessCode = typeof oRef?.AccessCode === 'string' ? oRef.AccessCode.trim() : '';
-
-            if (Number.isInteger(iNumber) && iNumber > 0 && sAccessCode) {
-                oRefs.set(`${iNumber}:${sAccessCode}`, { Number: iNumber, AccessCode: sAccessCode });
-            }
-
-        }
-
-        return [...oRefs.values()];
 
     }
 
