@@ -143,6 +143,8 @@ No trial o HANA Cloud é parado toda noite. Dois workflows cuidam do ambiente:
 | `CF_PASSWORD` | Secret | Senha do usuário do BTP |
 | `UI5_REPO_TOKEN` | Secret | Fine-grained token com *Contents: Read and write* no repositório do UI5 |
 | `SMTP_PASSWORD` | Secret | Opcional se o servidor de email for cadastrado no admin; senha de app do Gmail |
+| `VAPID_PUBLIC_KEY` | Secret | Chave pública para Web Push; gerada com `npx web-push generate-vapid-keys` |
+| `VAPID_PRIVATE_KEY` | Secret | Chave privada para Web Push (par da pública); gerada com `npx web-push generate-vapid-keys` |
 | `SETTINGS_SECRET` | Secret | Opcional, recomendado; chave fixa (ex.: 32+ caracteres aleatórios) que protege a senha do servidor de email e permite restaurá-la de um backup em outro ambiente |
 | `CF_ORG` | Variable | Org do Cloud Foundry (ex.: `d4e1c97ctrial`) |
 | `SMTP_USER` | Variable | Opcional se o servidor de email for cadastrado no admin; email que envia as mensagens |
@@ -151,6 +153,7 @@ No trial o HANA Cloud é parado toda noite. Dois workflows cuidam do ambiente:
 | `CF_APP` | Variable | Opcional, padrão `BenditaLook-srv` |
 | `HANA_INSTANCE` | Variable | Opcional; sem ela o workflow usa a primeira instância `hana-cloud*` do space |
 | `SMTP_HOST` / `SMTP_PORT` | Variable | Opcionais, padrão `smtp.gmail.com` / `587` |
+| `VAPID_SUBJECT` | Variable | Opcional, contato do Web Push (`mailto:`); padrão `mailto:davifgeo@gmail.com` |
 | `UAA_INSTANCE` / `UAA_KEY` | Variable | Opcionais, padrão `BenditaLook-uaa` / `BenditaLook-uaa-key` |
 | `UI5_REPOSITORY` / `UI5_PAGES_URL` | Variable | Opcionais, padrão `DaviCastr/SAP-UI5-BenditaLook` (repositório oficial, espelhado em `Bendita-Look/Store`) / `https://bendita-look.github.io/Store/` (endereço da loja usado no `STORE_URL` e no login) |
 
