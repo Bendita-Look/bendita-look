@@ -26,6 +26,7 @@ const makeBackupService = (): BackupService => {
 
     return new BackupServiceImplementation(
         oBackupRepositoryFactory,
+        oCategoryRepositoryFactory,
         oProductImageRepositoryFactory,
         oStoreSettingsRepositoryFactory,
         [

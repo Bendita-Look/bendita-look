@@ -19,6 +19,19 @@ export class CategoryRepositoryImplementation extends BaseRepositoryImplementati
     }
 
 
+    public async findImageContentById(Id: string): Promise<CategoryModel | null> {
+
+        const oRows = await cds.run(
+            SELECT.from(this.getEntity())
+                .columns('ID', 'CategoryImageType', 'CategoryImage')
+                .where({ ID: Id })
+        );
+
+        return this.mapResult(oRows)[0] ?? null;
+
+    }
+
+
     protected entityName(): string {
 
         return 'Categories';

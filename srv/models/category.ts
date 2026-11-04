@@ -1,4 +1,5 @@
 import { Categories, Category } from '@models/apps/dflc/benditalook/entities';
+import { Readable } from 'stream';
 import { AuditProperties, BaseModel } from './base';
 
 export type CategoryProperties = AuditProperties & {
@@ -6,6 +7,8 @@ export type CategoryProperties = AuditProperties & {
     Name: string;
     Description?: string;
     Active: boolean;
+    ImageType?: string;
+    Image?: Readable;
 };
 
 export class CategoryModel extends BaseModel {
@@ -23,6 +26,8 @@ export class CategoryModel extends BaseModel {
             Name: Category.Name as string,
             Description: Category.Description ?? undefined,
             Active: Category.Active !== false,
+            ImageType: Category.CategoryImageType ?? undefined,
+            Image: (Category.CategoryImage as unknown as Readable) ?? undefined,
             ...this.retrieveAudit(Category)
         }));
 
@@ -34,6 +39,12 @@ export class CategoryModel extends BaseModel {
 
     public get Active() { return this.properties.Active; }
 
+    public get ImageType() { return this.properties.ImageType; }
+
+    public get Image() { return this.properties.Image; }
+
+    public get FileExtension() { return this.properties.ImageType?.split('/')[1]; }
+
     public toEntityObject(): Category {
 
         return this.cleanEntity({
@@ -41,6 +52,7 @@ export class CategoryModel extends BaseModel {
             Name: this.properties.Name,
             Description: this.properties.Description,
             Active: this.properties.Active,
+            CategoryImageType: this.properties.ImageType,
             ...this.auditEntityObject(this.properties)
         });
 

@@ -6,6 +6,7 @@ import { Either, left, right } from '@sweet-monads/either';
 import { AbstractError, ValidationError } from '@/errors';
 import { BaseRepository } from '@/repositories/base';
 import { BackupRepository } from '@/repositories/backup';
+import { CategoryRepository } from '@/repositories/category';
 import { ProductImageRepository } from '@/repositories/product-image';
 import { StoreSettingsRepository } from '@/repositories/store-settings';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
@@ -15,7 +16,12 @@ import { BaseServiceImplementation } from '../base/implementation';
 
 type ExportableModel = { toEntityObject(): object };
 
-type BackupRow = Record<string, unknown> & { ID?: string; ImageType?: string; BannerImageType?: string };
+type BackupRow = Record<string, unknown> & {
+    ID?: string;
+    ImageType?: string;
+    CategoryImageType?: string;
+    BannerImageType?: string;
+};
 
 export type BackupTable = {
     name: string;
@@ -25,14 +31,17 @@ export type BackupTable = {
 
 const WORKBOOK_NAME = 'BenditaLook.xlsx';
 const BACKUP_CONTENT_TYPE = 'application/zip';
+const CATEGORIES_TABLE = 'Categories';
 const IMAGES_TABLE = 'ProductImages';
 const SETTINGS_TABLE = 'StoreSettings';
 const BANNER_FILE = 'banner';
+const CATEGORY_IMAGES_FOLDER = 'categories';
 
 export class BackupServiceImplementation extends BaseServiceImplementation<Backup> implements BackupService {
 
     constructor(
         public readonly Repository: BackupRepository,
+        private readonly CategoryRepository: CategoryRepository,
         private readonly ImageRepository: ProductImageRepository,
         private readonly SettingsRepository: StoreSettingsRepository,
         private readonly Tables: BackupTable[]
@@ -72,6 +81,7 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
 
             }
 
+            await this.addCategoryImages(oZip);
             await this.addImages(oZip);
             await this.addBanner(oZip);
 
@@ -158,6 +168,24 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
     }
 
 
+    private async addCategoryImages(Zip: AdmZip): Promise<void> {
+
+        const aCategories = (await this.CategoryRepository.findAll()).filter((oCategory) => oCategory.FileExtension);
+
+        for (const oCategory of aCategories) {
+
+            const oCategoryWithContent = await this.CategoryRepository.findImageContentById(oCategory.Id);
+            const oBuffer = await StreamConverter.toBuffer(oCategoryWithContent?.Image);
+
+            if (oBuffer) {
+                Zip.addFile(`${CATEGORY_IMAGES_FOLDER}/${oCategory.Id}.${oCategory.FileExtension}`, oBuffer);
+            }
+
+        }
+
+    }
+
+
     private async addImages(Zip: AdmZip): Promise<void> {
 
         const aImages = await this.ImageRepository.findAll();
@@ -190,11 +218,25 @@ export class BackupServiceImplementation extends BaseServiceImplementation<Backu
 
     private attachMedia(TableName: string, Row: BackupRow, Zip: AdmZip): BackupRow {
 
+        if (TableName === CATEGORIES_TABLE) {
+            return this.attachCategoryImage(Row, Zip);
+        }
+
         if (TableName === IMAGES_TABLE) {
             return this.attachImage(Row, Zip);
         }
 
         return TableName === SETTINGS_TABLE ? this.attachBanner(Row, Zip) : Row;
+
+    }
+
+
+    private attachCategoryImage(Row: BackupRow, Zip: AdmZip): BackupRow {
+
+        const sExtension = Row.CategoryImageType?.split('/')[1];
+        const oEntry = sExtension ? Zip.getEntry(`${CATEGORY_IMAGES_FOLDER}/${Row.ID}.${sExtension}`) : null;
+
+        return oEntry ? { ...Row, CategoryImage: oEntry.getData() } : { ...Row, CategoryImageType: undefined };
 
     }
 
