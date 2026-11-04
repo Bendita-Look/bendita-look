@@ -1,4 +1,4 @@
-import { DeliveryInput, Order, OrderChangeInput, OrderInput, OrderItemInput, StoreSaleInput } from '@models/apps/dflc/benditalook/entities';
+import { DeliveryInput, Order, OrderChangeInput, OrderInput, OrderItemInput, OrderRef, StoreSaleInput } from '@models/apps/dflc/benditalook/entities';
 import { BaseController, BaseControllerResponse } from '@/controllers/base';
 
 export interface OrderController extends BaseController<Order> {
@@ -6,6 +6,8 @@ export interface OrderController extends BaseController<Order> {
     registerStoreSale(Input: StoreSaleInput): Promise<BaseControllerResponse>;
     quoteOrder(Items: OrderItemInput[], CouponCode?: string | null): Promise<BaseControllerResponse>;
     trackOrder(Number: number, AccessCode: string): Promise<BaseControllerResponse>;
+    lookupOrders(Orders: OrderRef[] | null | undefined): Promise<BaseControllerResponse>;
+    requestOrderLinks(Email: string | null | undefined, Locale: string | undefined): Promise<BaseControllerResponse>;
     changeStatus(OrderId: string, Status: string, Delivery?: DeliveryInput | null): Promise<BaseControllerResponse>;
     deleteOrders(OrderIds: string[], RestoreStock: boolean): Promise<BaseControllerResponse>;
     trackingUrl(OrderId: string): Promise<BaseControllerResponse>;

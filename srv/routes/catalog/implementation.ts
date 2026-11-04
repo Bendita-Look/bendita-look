@@ -29,6 +29,10 @@ export class CatalogRouteImplementation extends BaseRouteImplementation<Order> i
 
         Service.on('TrackOrder', this.trackOrder.bind(this));
 
+        Service.on('LookupOrders', this.lookupOrders.bind(this));
+
+        Service.on('RequestOrderLinks', this.requestOrderLinks.bind(this));
+
         Service.on('QuoteOrder', this.quoteOrder.bind(this));
 
         this.StoreSettingsRoute.catalog(Service);
@@ -65,6 +69,20 @@ export class CatalogRouteImplementation extends BaseRouteImplementation<Order> i
         const oResult = await this.Controller.trackOrder(Number, AccessCode);
 
         return this.resultOf(Request, oResult);
+
+    }
+
+
+    private async lookupOrders(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.lookupOrders(Request.data.Orders));
+
+    }
+
+
+    private async requestOrderLinks(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.requestOrderLinks(Request.data.Email, Request.locale));
 
     }
 

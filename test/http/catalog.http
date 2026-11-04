@@ -42,3 +42,26 @@ Accept-Language: pt-BR
 # @name TrackOrder
 GET {{catalog}}/TrackOrder(Number={{orderNumber}},AccessCode='{{accessCode}}')
 Accept-Language: pt-BR
+
+
+### Consultar pedidos (Meus pedidos): precisa do par Number + AccessCode
+# @name LookupOrders
+POST {{catalog}}/LookupOrders
+Content-Type: application/json
+
+{
+  "Orders": [
+    { "Number": {{orderNumber}}, "AccessCode": "{{accessCode}}" }
+  ]
+}
+
+
+### Pedir links dos pedidos por e-mail (resposta sempre igual)
+# @name RequestOrderLinks
+POST {{catalog}}/RequestOrderLinks
+Content-Type: application/json
+Accept-Language: pt-BR
+
+{
+  "Email": "cliente@exemplo.com"
+}

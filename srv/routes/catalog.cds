@@ -76,6 +76,10 @@ service Catalog {
 
     function TrackOrder(Number: Integer, AccessCode: String(32)) returns entities.TrackedOrder;
 
+    action   LookupOrders(Orders: many entities.OrderRef)         returns many entities.OrderSummary;
+
+    action   RequestOrderLinks(Email: String(120))                returns entities.ActionResult;
+
     function StoreInfo()                                          returns entities.StoreInfo;
 
     function ActivePromotions()                                   returns many entities.ActivePromotion;

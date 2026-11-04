@@ -1,3 +1,4 @@
+import { OrderSummary } from '@models/apps/dflc/benditalook/entities';
 import { OrderModel } from '@/models/order';
 import { OrderReturnModel } from '@/models/order-return';
 
@@ -7,5 +8,6 @@ export interface NotificationService {
     sendStoreSaleThanks(Order: OrderModel, Locale: string | undefined): Promise<void>;
     sendOrderUpdated(Order: OrderModel, Locale: string | undefined): Promise<void>;
     sendOrderReturn(Order: OrderModel, Return: OrderReturnModel, Locale: string | undefined): Promise<void>;
+    sendOrderLinks(Email: string, Orders: OrderSummary[], Locale: string | undefined): Promise<void>;
     trackingLink(Order: OrderModel): Promise<string | undefined>;
 }

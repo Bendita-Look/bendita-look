@@ -1,6 +1,7 @@
 import path from 'path';
 import Decimal from 'decimal.js';
-import { PromotionReward } from '@/constants/promotions';
+import { OrderSummary } from '@models/apps/dflc/benditalook/entities';
+import { PromotionReward, STORE_TIME_ZONE } from '@/constants/promotions';
 import { DeliveryType, OPEN_ORDER_STATUSES, OrderStatus } from '@/constants/order-status';
 import { OrderModel } from '@/models/order';
 import { OrderReturnModel } from '@/models/order-return';
@@ -22,6 +23,7 @@ const NUMBER_LOCALES: Record<string, string> = { en: 'en-US', pt: DEFAULT_NUMBER
 const BRAZIL_COUNTRY_CODE = '55';
 const LOCAL_PHONE_MAX_DIGITS = 11;
 const TEMPLATE_NAME = 'order';
+const ORDER_LINKS_TEMPLATE_NAME = 'order-links';
 const LOGO_CID = 'logo';
 const LOGO_FILE = 'logo.png';
 const ITEM_IMAGE_CID_PREFIX = 'item-';
@@ -48,6 +50,11 @@ type DescribedItem = {
     ProductName: string;
     ColorName?: string;
     Size: string;
+};
+
+type OrderLink = {
+    Number?: number | null;
+    AccessCode?: string | null;
 };
 
 export class NotificationServiceImplementation implements NotificationService {
@@ -142,6 +149,27 @@ export class NotificationServiceImplementation implements NotificationService {
             showContact: false,
             primaryUrl: this.trackingUrl(Order, oSettings),
             orderReturn: Return
+        });
+
+    }
+
+
+    public async sendOrderLinks(Email: string, Orders: OrderSummary[], Locale: string | undefined): Promise<void> {
+
+        const oSettings = await this.StoreSettingsService.currentSettings();
+        const sRootUrl = this.storeUrl(oSettings);
+
+        if (!sRootUrl) {
+            return;
+        }
+
+        await this.EmailSender.send({
+            fromName: oSettings.StoreName,
+            to: Email,
+            replyTo: oSettings.ContactEmail,
+            subject: Messages.text('email.orderLinks.subject', Locale, { store: oSettings.StoreName }),
+            html: this.TemplateRenderer.render(ORDER_LINKS_TEMPLATE_NAME, this.orderLinksContext(Orders, oSettings, sRootUrl, Locale)),
+            attachments: [this.logoAttachment()]
         });
 
     }
@@ -365,9 +393,55 @@ export class NotificationServiceImplementation implements NotificationService {
 
     private formatCurrency(Value: Decimal, Locale: string | undefined): string {
 
-        const sNumberLocale = NUMBER_LOCALES[(Locale ?? '').slice(0, 2)] ?? DEFAULT_NUMBER_LOCALE;
+        return new Intl.NumberFormat(this.numberLocale(Locale), { style: 'currency', currency: CURRENCY }).format(Value.toNumber());
 
-        return new Intl.NumberFormat(sNumberLocale, { style: 'currency', currency: CURRENCY }).format(Value.toNumber());
+    }
+
+
+    private formatDate(Value: string | null | undefined, Locale: string | undefined): string {
+
+        return new Intl.DateTimeFormat(this.numberLocale(Locale), { dateStyle: 'short', timeZone: STORE_TIME_ZONE }).format(new Date(Value ?? Date.now()));
+
+    }
+
+
+    private numberLocale(Locale: string | undefined): string {
+
+        return NUMBER_LOCALES[(Locale ?? '').slice(0, 2)] ?? DEFAULT_NUMBER_LOCALE;
+
+    }
+
+
+    private orderLinksContext(Orders: OrderSummary[], Settings: StoreSettingsModel, RootUrl: string, Locale: string | undefined): object {
+
+        return {
+            language: Locale || DEFAULT_NUMBER_LOCALE,
+            texts: {
+                title: Settings.StoreName,
+                greeting: Messages.text('email.greetingAnonymous', Locale),
+                message: Messages.text('email.orderLinks.message', Locale),
+                viewOrder: Messages.text('email.orderLinks.viewOrder', Locale),
+                myOrders: Messages.text('email.orderLinks.myOrders', Locale),
+                footer: Messages.text('email.footer', Locale)
+            },
+            orders: Orders.map((oOrder) => ({
+                label: this.orderLinkLabel(oOrder, Locale),
+                status: Messages.text(`orderStatus.${oOrder.Status}`, Locale),
+                url: this.orderUrl(RootUrl, oOrder)
+            })),
+            myOrdersUrl: `${RootUrl}#/my-orders`
+        };
+
+    }
+
+
+    private orderLinkLabel(Order: OrderSummary, Locale: string | undefined): string {
+
+        return Messages.text('email.orderLinks.orderLine', Locale, {
+            number: Order.Number ?? 0,
+            date: this.formatDate(Order.createdAt, Locale),
+            total: this.formatCurrency(new Decimal(Order.TotalAmount ?? 0), Locale)
+        });
 
     }
 
@@ -379,11 +453,18 @@ export class NotificationServiceImplementation implements NotificationService {
     }
 
 
+    private orderUrl(RootUrl: string, Order: OrderLink): string {
+
+        return `${RootUrl}#/order/${Order.Number}/${Order.AccessCode}`;
+
+    }
+
+
     private trackingUrl(Order: OrderModel, Settings: StoreSettingsModel): string | undefined {
 
         const sStoreUrl = this.storeUrl(Settings);
 
-        return sStoreUrl ? `${sStoreUrl}#/order/${Order.Number}/${Order.AccessCode}` : undefined;
+        return sStoreUrl ? this.orderUrl(sStoreUrl, Order) : undefined;
 
     }
 

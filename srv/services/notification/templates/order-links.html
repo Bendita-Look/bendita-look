@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="{{language}}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{texts.title}}</title>
+</head>
+
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #fdf1f4; color: #4a3527;">
+    <table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fdf1f4">
+        <tr>
+            <td align="center" style="padding: 24px 12px;">
+                <table width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(156, 122, 74, .12);">
+
+                    <tr>
+                        <td align="center" bgcolor="#ffcad4" style="background-color: #ffcad4; padding: 20px 28px; border-bottom: 3px solid #a8814f;">
+                            <img src="cid:logo" alt="{{texts.title}}" width="110" height="110" style="display: block; border-radius: 55px;">
+                            <div style="font-size: 14px; color: #7a5a35; margin-top: 10px; font-weight: 600;">{{texts.title}}</div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 28px;">
+                            <p style="font-size: 18px; font-weight: 600; margin: 0 0 12px;">{{texts.greeting}}</p>
+                            <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px;">{{texts.message}}</p>
+
+                            <table width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse: collapse; font-size: 14px;">
+                                {{#each orders}}
+                                <tr style="border-bottom: 1px solid #f6e2e7;">
+                                    <td>
+                                        <p style="font-size: 14px; font-weight: 700; margin: 0;">{{label}}</p>
+                                        <p style="font-size: 12px; color: #8a6b55; margin: 4px 0 0;">{{status}}</p>
+                                    </td>
+                                    <td align="right" style="white-space: nowrap;">
+                                        <a href="{{url}}" style="display: inline-block; padding: 8px 16px; background-color: #a8814f; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: 600;">{{../texts.viewOrder}}</a>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </table>
+
+                            <table cellspacing="0" cellpadding="0" border="0" style="margin-top: 28px;">
+                                <tr>
+                                    <td>
+                                        <a href="{{myOrdersUrl}}" style="display: inline-block; padding: 12px 22px; background-color: #a8814f; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: 600;">{{texts.myOrders}}</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 16px 28px; background-color: #fdf1f4; font-size: 12px; color: #8a6b55;">{{texts.footer}}</td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

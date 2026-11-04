@@ -1,10 +1,15 @@
 import cds from '@sap/cds';
 import Decimal from 'decimal.js';
+import { OrderSummary } from '@models/apps/dflc/benditalook/entities';
 import { OrderDelivery, OrderModel } from '@/models/order';
 import { OrderStatus } from '@/constants/order-status';
 import { ServiceLocator } from '@/infrastructure/ServiceLocator';
 import { OrderRepository } from './protocols';
 import { BaseRepositoryImplementation } from '../base/implementation';
+
+type OrderSummaryRow = Omit<OrderSummary, 'ItemCount'> & { ID: string };
+
+const SUMMARY_COLUMNS = ['ID', 'Number', 'AccessCode', 'Status', 'FulfillmentType', 'TotalAmount', 'createdAt'];
 
 export class OrderRepositoryImplementation extends BaseRepositoryImplementation<OrderModel> implements OrderRepository {
 
@@ -43,6 +48,38 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
             ...oOrder,
             Items: aItems.filter((oItem: { Order_ID: string }) => oItem.Order_ID === oOrder.ID)
         })));
+
+    }
+
+
+    public async findSummariesByNumbers(Numbers: number[]): Promise<OrderSummary[]> {
+
+        if (!Numbers.length) {
+            return [];
+        }
+
+        const aRows: OrderSummaryRow[] = await cds.run(
+            SELECT.from(this.getEntity())
+                .columns(...SUMMARY_COLUMNS)
+                .where({ Number: { in: Numbers } })
+        );
+
+        return this.withItemCounts(aRows);
+
+    }
+
+
+    public async findRecentByCustomerEmail(Email: string, Since: Date, Limit: number): Promise<OrderSummary[]> {
+
+        const aRows: OrderSummaryRow[] = await cds.run(
+            SELECT.from(this.getEntity())
+                .columns(...SUMMARY_COLUMNS)
+                .where`lower(CustomerEmail) = ${Email} and createdAt >= ${Since.toISOString()}`
+                .orderBy('createdAt desc')
+                .limit(Limit)
+        );
+
+        return this.withItemCounts(aRows);
 
     }
 
@@ -161,6 +198,26 @@ export class OrderRepositoryImplementation extends BaseRepositoryImplementation<
         ]);
 
         return this.mapResult([{ ...oOrder, Items: aItems, Promotions: aPromotions, Returns: aReturns }])[0];
+
+    }
+
+
+    private async withItemCounts(Rows: OrderSummaryRow[]): Promise<OrderSummary[]> {
+
+        if (!Rows.length) {
+            return [];
+        }
+
+        const aCounts: { Order_ID: string; ItemCount: number | null }[] = await cds.run(
+            SELECT.from(ServiceLocator.getEntity('OrderItems'))
+                .columns('Order_ID', 'sum(Quantity) as ItemCount')
+                .where({ Order_ID: { in: Rows.map((oRow) => oRow.ID) } })
+                .groupBy('Order_ID')
+        );
+
+        const oCounts = new Map(aCounts.map((oCount): [string, number] => [oCount.Order_ID, Number(oCount.ItemCount ?? 0)]));
+
+        return Rows.map(({ ID, ...oOrder }) => ({ ...oOrder, ItemCount: oCounts.get(ID) ?? 0 }));
 
     }
 

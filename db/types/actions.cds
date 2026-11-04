@@ -195,6 +195,21 @@ type TrackedOrder {
     Returns      : many TrackedReturn;
 }
 
+type OrderRef {
+    Number     : Integer;
+    AccessCode : String(32);
+}
+
+type OrderSummary {
+    Number          : Integer;
+    AccessCode      : String(32);
+    Status          : String(20);
+    FulfillmentType : String(10);
+    TotalAmount     : Decimal(15, 2);
+    ItemCount       : Integer;
+    createdAt       : Timestamp;
+}
+
 type MonthlySales {
     Month   : Integer;
     Orders  : Integer;

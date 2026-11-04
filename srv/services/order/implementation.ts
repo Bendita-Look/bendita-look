@@ -1,11 +1,14 @@
 import crypto from 'crypto';
 import {
+    ActionResult,
     DeliveryInput,
     Order,
     OrderChangeInput,
     OrderInput,
     OrderItemInput,
     OrderQuote,
+    OrderRef,
+    OrderSummary,
     StoreSaleInput,
     SubmitOrderResult,
     TrackedOrder
@@ -51,6 +54,11 @@ type NewOrder = OrderAddress & {
     Items: RequestedItem[];
 };
 
+type OrderLookupRef = { Number: number; AccessCode: string };
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 120;
+
 export class OrderServiceImplementation extends BaseServiceImplementation<Order> implements OrderService {
 
     constructor(
@@ -62,6 +70,7 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
         private readonly NotificationService: NotificationService,
         private readonly PushService: PushService,
         private readonly RateLimiter: RateLimiter,
+        private readonly LinksLimiter: RateLimiter,
         private readonly InputValidator: OrderInputValidator = new OrderInputValidator()
     ) {
 
@@ -173,6 +182,62 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
             }
 
             return right(this.toTrackedOrder(oOrder));
+
+        });
+
+    }
+
+
+    public async lookupOrders(Orders: OrderRef[] | null | undefined): Promise<Either<AbstractError, OrderSummary[]>> {
+
+        if (!Array.isArray(Orders)) {
+            return right([]);
+        }
+
+        if (Orders.length > ORDER_LIMITS.maxOrdersPerLookup) {
+            return left(new ValidationError('error.tooManyOrderRefs', { max: ORDER_LIMITS.maxOrdersPerLookup }));
+        }
+
+        const aRefs = this.normalizeOrderRefs(Orders);
+
+        return this.execute(async () => {
+
+            const aOrders = await this.Repository.findSummariesByNumbers(aRefs.map((oRef) => oRef.Number));
+
+            return right(aOrders
+                .filter((oOrder) => aRefs.some((oRef) => oRef.Number === oOrder.Number && oRef.AccessCode === oOrder.AccessCode))
+                .sort((oA, oB) => (oB.createdAt ?? '').localeCompare(oA.createdAt ?? '')));
+
+        });
+
+    }
+
+
+    public async requestOrderLinks(Email: string | null | undefined, Locale: string | undefined): Promise<Either<AbstractError, ActionResult>> {
+
+        const oEmail = this.normalizeEmail(Email);
+
+        if (oEmail.isLeft()) {
+            return left(oEmail.value);
+        }
+
+        const sEmail = oEmail.value;
+        const bIpAllowed = this.LinksLimiter.tryConsume(ServiceLocator.getClientIp());
+        const bEmailAllowed = this.LinksLimiter.tryConsume(`email:${sEmail}`);
+
+        if (!bIpAllowed || !bEmailAllowed) {
+            return left(new TooManyRequestsError('error.tooManyOrderLinkRequests'));
+        }
+
+        return this.execute(async () => {
+
+            const aOrders = await this.Repository.findRecentByCustomerEmail(sEmail, this.linksLookbackStart(), ORDER_LIMITS.maxOrderLinksPerEmail);
+
+            if (aOrders.length) {
+                ServiceLocator.afterCommit(() => this.NotificationService.sendOrderLinks(sEmail, aOrders, Locale));
+            }
+
+            return right({ success: true, data: Messages.text('orderLinks.requested', Locale) });
 
         });
 
@@ -742,6 +807,50 @@ export class OrderServiceImplementation extends BaseServiceImplementation<Order>
                 }))
             }))
         };
+
+    }
+
+
+    private normalizeOrderRefs(Orders: OrderRef[]): OrderLookupRef[] {
+
+        const oRefs = new Map<string, OrderLookupRef>();
+
+        for (const oRef of Orders) {
+
+            const iNumber = oRef?.Number ?? 0;
+            const sAccessCode = typeof oRef?.AccessCode === 'string' ? oRef.AccessCode.trim() : '';
+
+            if (Number.isInteger(iNumber) && iNumber > 0 && sAccessCode) {
+                oRefs.set(`${iNumber}:${sAccessCode}`, { Number: iNumber, AccessCode: sAccessCode });
+            }
+
+        }
+
+        return [...oRefs.values()];
+
+    }
+
+
+    private normalizeEmail(Email: string | null | undefined): Either<AbstractError, string> {
+
+        const sEmail = typeof Email === 'string' ? Email.trim().toLowerCase() : '';
+
+        if (!sEmail || sEmail.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(sEmail)) {
+            return left(new ValidationError('error.invalidEmail'));
+        }
+
+        return right(sEmail);
+
+    }
+
+
+    private linksLookbackStart(): Date {
+
+        const oSince = new Date();
+
+        oSince.setMonth(oSince.getMonth() - ORDER_LIMITS.orderLinksLookbackMonths);
+
+        return oSince;
 
     }
 
