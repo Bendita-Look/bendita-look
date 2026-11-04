@@ -83,6 +83,8 @@ service BenditaLook {
 
     action RegisterStockEntry(Entry: entities.StockEntryInput)            returns entities.ActionResult;
 
+    action DeleteStockEntry(EntryId: UUID)                                 returns entities.ActionResult;
+
     action ExportBackup()                                                 returns entities.ActionResult;
 
     action SaveEmailServer(Server: entities.EmailServerInput)             returns entities.ActionResult;

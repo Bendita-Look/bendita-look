@@ -5,4 +5,5 @@ import { BaseService } from '../base';
 
 export interface StockEntryService extends BaseService<StockEntry> {
     registerEntry(Input: StockEntryInput): Promise<Either<AbstractError, ActionResult>>;
+    deleteEntry(EntryId: string): Promise<Either<AbstractError, ActionResult>>;
 }

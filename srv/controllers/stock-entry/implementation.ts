@@ -19,4 +19,11 @@ export class StockEntryControllerImplementation extends BaseControllerImplementa
 
     }
 
+
+    public async deleteEntry(EntryId: string): Promise<BaseControllerResponse> {
+
+        return this.respond(await this.Service.deleteEntry(EntryId), 200);
+
+    }
+
 }

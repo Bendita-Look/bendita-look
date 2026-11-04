@@ -16,6 +16,7 @@ export class StockEntryRouteImplementation extends BaseRouteImplementation<Stock
     public main(Service: ApplicationService): void {
 
         Service.on('RegisterStockEntry', this.registerEntry.bind(this));
+        Service.on('DeleteStockEntry', this.deleteEntry.bind(this));
 
     }
 
@@ -23,6 +24,13 @@ export class StockEntryRouteImplementation extends BaseRouteImplementation<Stock
     private async registerEntry(Request: Request): Promise<unknown> {
 
         return this.resultOf(Request, await this.Controller.registerEntry(Request.data.Entry));
+
+    }
+
+
+    private async deleteEntry(Request: Request): Promise<unknown> {
+
+        return this.resultOf(Request, await this.Controller.deleteEntry(Request.data.EntryId));
 
     }
 

@@ -3,4 +3,5 @@ import { BaseController, BaseControllerResponse } from '@/controllers/base';
 
 export interface StockEntryController extends BaseController<StockEntry> {
     registerEntry(Input: StockEntryInput): Promise<BaseControllerResponse>;
+    deleteEntry(EntryId: string): Promise<BaseControllerResponse>;
 }

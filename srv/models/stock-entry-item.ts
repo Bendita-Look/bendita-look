@@ -40,7 +40,11 @@ export class StockEntryItemModel extends BaseModel {
 
     }
 
+    public get VariantId() { return this.properties.VariantId; }
+
     public get Quantity() { return this.properties.Quantity; }
+
+    public get UnitCost() { return this.properties.UnitCost; }
 
     public get TotalCost() { return this.properties.TotalCost; }
 

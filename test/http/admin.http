@@ -36,6 +36,24 @@ Authorization: Basic {{username}}:{{password}}
 }
 
 
+### Entradas de estoque
+# @name StockEntries_GET
+GET {{admin}}/StockEntries?$orderby=createdAt desc
+Authorization: Basic {{username}}:{{password}}
+
+
+### Excluir entrada de estoque lançada errado (devolve o estoque e recalcula o custo médio; falha se faltar estoque)
+# @name DeleteStockEntry
+POST {{admin}}/DeleteStockEntry
+Content-Type: application/json
+Accept-Language: pt-BR
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "EntryId": "{{StockEntries_GET.response.body.$.value[0].ID}}"
+}
+
+
 ### Produto - criar draft
 # @name Products_Draft_POST
 POST {{admin}}/Products
